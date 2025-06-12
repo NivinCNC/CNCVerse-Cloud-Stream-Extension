@@ -1,0 +1,8 @@
+{
+  "name": "CNC Repo(All Language)",
+  "description": "All Language Contents",
+  "manifestVersion": 1,
+  "pluginLists": [
+    "https://raw.githubusercontent.com/NivinCNC/CNCVerse-Cloud-Stream-Extension/builds/plugins.json"
+  ]
+}
