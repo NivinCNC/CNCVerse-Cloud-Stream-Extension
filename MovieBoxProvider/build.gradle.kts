@@ -8,7 +8,7 @@ android {
 }
 
 cloudstream {
-    language = "ta"
+    language = "hi"
     // All of these properties are optional, you can safely remove them
 
     description = "Multi Language Movies and Series Provider"
