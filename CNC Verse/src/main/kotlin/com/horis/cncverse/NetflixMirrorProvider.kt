@@ -83,7 +83,7 @@ class NetflixMirrorProvider : MainAPI() {
         
         if (id.isEmpty()) return null
         
-        val posterUrl = "https://imgcdn.media/poster/v/${id}.jpg"
+        val posterUrl = "https://imgcdn.kim/poster/v/${id}.jpg"
         val title = selectFirst("img")?.attr("alt") ?: ""
 
         return newAnimeSearchResponse(title, Id(id).toJson()) {

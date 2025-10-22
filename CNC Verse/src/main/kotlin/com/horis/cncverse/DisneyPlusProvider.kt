@@ -83,7 +83,7 @@ class DisneyPlusProvider : MainAPI() {
 
         return data.searchResult.map {
             newAnimeSearchResponse(it.t, Id(it.id).toJson()) {
-                posterUrl = "https://imgcdn.media/hs/v/166/${it.id}.jpg"
+                posterUrl = "https://imgcdn.kim/hs/v/166/${it.id}.jpg"
                 posterHeaders = mapOf("Referer" to "$mainUrl/tv/home")
             }
         }
@@ -130,7 +130,7 @@ class DisneyPlusProvider : MainAPI() {
                     this.name = it.t
                     this.episode = it.ep.replace("E", "").toIntOrNull()
                     this.season = it.s.replace("S", "").toIntOrNull()
-                    this.posterUrl = "https://imgcdn.media/hsepimg/${it.id}.jpg"
+                    this.posterUrl = "https://imgcdn.kim/hsepimg/${it.id}.jpg"
                     this.runTime = it.time.replace("m", "").toIntOrNull()
                 }
             }
@@ -147,8 +147,8 @@ class DisneyPlusProvider : MainAPI() {
         val type = if (data.episodes.first() == null) TvType.Movie else TvType.TvSeries
 
         return newTvSeriesLoadResponse(title, url, type, episodes) {
-            posterUrl = "https://imgcdn.media/hs/v/166/$id.jpg"
-            backgroundPosterUrl ="https://imgcdn.media/hs/h/166/$id.jpg"
+            posterUrl = "https://imgcdn.kim/hs/v/166/$id.jpg"
+            backgroundPosterUrl ="https://imgcdn.kim/hs/h/166/$id.jpg"
             posterHeaders = mapOf("Referer" to "$mainUrl/tv/home")
             plot = data.desc
             year = data.year.toIntOrNull()
@@ -181,7 +181,7 @@ class DisneyPlusProvider : MainAPI() {
                     name = it.t
                     episode = it.ep.replace("E", "").toIntOrNull()
                     season = it.s.replace("S", "").toIntOrNull()
-                    this.posterUrl = "https://imgcdn.media/hsepimg/${it.id}.jpg"
+                    this.posterUrl = "https://imgcdn.kim/hsepimg/${it.id}.jpg"
                     this.runTime = it.time.replace("m", "").toIntOrNull()
                 }
             }
