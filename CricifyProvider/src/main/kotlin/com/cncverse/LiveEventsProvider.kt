@@ -183,7 +183,9 @@ class LiveEventsProvider : MainAPI() {
                                     }
 
                             val searchResponses =
-                                    categoryEvents.map { event ->
+                                    categoryEvents
+                                    .sortedByDescending{ isEventLive(it) }
+                                    .map { event ->
                                         val displayTitle = createDisplayTitle(event)
                                         val status = getEventStatus(event)
                                         val fullTitle =
