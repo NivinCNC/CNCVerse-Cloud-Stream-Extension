@@ -205,7 +205,7 @@ class Cricify(
 
     override suspend fun load(url: String): LoadResponse {
         val data = parseJson<LoadData>(url)
-        return newLiveStreamLoadResponse(data.title,data.url,url)
+        return newLiveStreamLoadResponse(data.title,url,url)
         {
             this.posterUrl=data.poster
             this.plot=data.nation
