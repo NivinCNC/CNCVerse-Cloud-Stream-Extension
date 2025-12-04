@@ -22,7 +22,7 @@ class TamilDhoolProvider : MainAPI() { // all providers must be an instance of M
         var context: android.content.Context? = null
     }
     
-    override var mainUrl = "https://www.tamildhool.net"
+    override var mainUrl = "https://www.tamildhool.tech"
     override var name = "TamilDhool"
     override val hasMainPage = true
     override var lang = "ta"
