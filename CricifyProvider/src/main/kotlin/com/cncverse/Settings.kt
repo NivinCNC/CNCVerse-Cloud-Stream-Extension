@@ -1,6 +1,7 @@
 package com.cncverse
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.drawable.Drawable
 import android.os.Build
@@ -14,6 +15,7 @@ import android.widget.LinearLayout
 import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AlertDialog
 import androidx.core.content.res.ResourcesCompat
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.lagradost.cloudstream3.CommonActivity.showToast
@@ -105,10 +107,33 @@ class Settings(
                 }
                 this?.apply()
             }
-            showToast("Saved. Restart the app to apply the settings")
-            dismiss()
+            
+            AlertDialog.Builder(requireContext())
+                .setTitle("Restart Required")
+                .setMessage("Changes have been saved. Do you want to restart the app to apply them?")
+                .setPositiveButton("Yes") { _, _ ->
+                    dismiss()
+                    restartApp()
+                }
+                .setNegativeButton("No") { dialog, _ ->
+                    dialog.dismiss()
+                    showToast("Settings saved. Restart app to apply changes.")
+                }
+                .show()
         }
+    }
 
+    private fun restartApp() {
+        val context = requireContext().applicationContext
+        val packageManager = context.packageManager
+        val intent = packageManager.getLaunchIntentForPackage(context.packageName)
+        val componentName = intent?.component
+
+        if (componentName != null) {
+            val restartIntent = Intent.makeRestartActivityTask(componentName)
+            context.startActivity(restartIntent)
+            Runtime.getRuntime().exit(0)
+        }
     }
 
     private fun getPlaylistRow(playlistName: String): RelativeLayout {
