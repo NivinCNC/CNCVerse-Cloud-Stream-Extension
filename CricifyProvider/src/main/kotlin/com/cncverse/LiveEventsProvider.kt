@@ -145,7 +145,7 @@ class LiveEventsProvider : MainAPI() {
         }
         
         return buildString {
-            append("https://live-card-cncverse.vercel.app/api/match-card?")
+            append("https://live-card.cricify.workers.dev/api/match-card?")
             append("title=$title")
             append("&teamA=$teamA")
             append("&teamB=$teamB")
