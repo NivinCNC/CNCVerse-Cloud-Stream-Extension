@@ -6,8 +6,8 @@ import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
 object CryptoUtils {
-    const val CRICIFY_PROVIDER_SECRET1 = BuildConfig.CRICIFY_PROVIDER_SECRET1
-    const val CRICIFY_PROVIDER_SECRET2 = BuildConfig.CRICIFY_PROVIDER_SECRET2
+    private val CRICIFY_PROVIDER_SECRET1 = BuildConfig.CRICIFY_PROVIDER_SECRET1
+    private val CRICIFY_PROVIDER_SECRET2 = BuildConfig.CRICIFY_PROVIDER_SECRET2
 
     // Key and IV pairs loaded from BuildConfig
     private val KEYS = mapOf(
