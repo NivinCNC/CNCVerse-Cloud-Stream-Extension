@@ -653,7 +653,7 @@ class CastleTvProvider : MainAPI() {
                             callback.invoke(
                                 newExtractorLink(
                                     source = name,
-                                    name = if (videoData.videoUrl?.contains("preview", ignoreCase = true) == true) {
+                                    name = if (videoData.videoUrl.contains("preview", ignoreCase = true)) {
                                         "$name - $allLanguageNames (preview) Requires Castle TV Premium"
                                     } else {
                                         "$name - $allLanguageNames"
@@ -745,7 +745,7 @@ class CastleTvProvider : MainAPI() {
                                 callback.invoke(
                                     newExtractorLink(
                                         source = name,
-                                        name = if (videoData.videoUrl?.contains("preview", ignoreCase = true) == true) {
+                                        name = if (videoData.videoUrl.contains("preview", ignoreCase = true)) {
                                             "$name - $languageName (preview) Requires Castle TV Premium"
                                         } else {
                                             "$name - $languageName"

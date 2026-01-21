@@ -99,10 +99,10 @@ object FirebaseRemoteConfigFetcher {
                 val response = client.newCall(request).execute()
                 
                 if (response.isSuccessful) {
-                    val responseBody = response.body?.string()
+                    val responseBody = response.body.string()
                     if (!responseBody.isNullOrBlank()) {
                         val configResponse = parseJson<RemoteConfigResponse>(responseBody)
-                        return@withContext configResponse?.entries
+                        return@withContext configResponse.entries
                     }
                 }
                 

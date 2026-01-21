@@ -64,7 +64,7 @@ class EinthusanProvider : MainAPI() { // all providers must be an instance of Ma
     }
 
     private fun Element.toSearchResult(): SearchResponse? {
-        val title = this.selectFirst("div.block2 > a.title > h3")?.text()?.toString()?.trim() ?: return null
+        val title = this.selectFirst("div.block2 > a.title > h3")?.text()?.trim() ?: return null
         //Log.d("title", title)
         val href = fixUrl(mainUrl + this.selectFirst("div.block2 > a.title")?.attr("href").toString())
         //Log.d("href", href)
@@ -118,9 +118,9 @@ class EinthusanProvider : MainAPI() { // all providers must be an instance of Ma
     override suspend fun load(url: String): LoadResponse? {
         val doc = app.get(url).document
         //Log.d("Doc", doc.toString())
-        val title = doc.select("#UIMovieSummary > ul > li > div.block2 > a.title > h3").text().toString().trim() ?: return null
+        val title = doc.select("#UIMovieSummary > ul > li > div.block2 > a.title > h3").text().trim().ifEmpty { return null }
         //Log.d("title", title)
-        val href = fixUrl(mainUrl + doc.select("#UIMovieSummary > ul > li > div.block2 > a.title").attr("href").toString())
+        val href = fixUrl(mainUrl + doc.select("#UIMovieSummary > ul > li > div.block2 > a.title").attr("href"))
         //Log.d("href", href)
         val poster = fixUrlNull("https:${doc.select("#UIMovieSummary > ul > li > div.block1 > a > img").attr("src")}")
         //Log.d("poster", poster.toString())
@@ -135,10 +135,10 @@ class EinthusanProvider : MainAPI() { // all providers must be an instance of Ma
             doc.select("div.professionals > div").map {
                 ActorData(
                     Actor(
-                        it.select("div.prof > p").text().toString(),
-                        "https:" + it.select("div.imgwrap img").attr("src").toString()
+                        it.select("div.prof > p").text(),
+                        "https:" + it.select("div.imgwrap img").attr("src")
                     ),
-                    roleString = it.select("div.prof > label").text().toString(),
+                    roleString = it.select("div.prof > label").text(),
                 )
             }
         val mp4link = doc.select("#UIVideoPlayer").attr("data-mp4-link")

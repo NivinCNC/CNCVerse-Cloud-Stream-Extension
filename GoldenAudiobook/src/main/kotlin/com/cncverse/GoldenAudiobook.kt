@@ -94,7 +94,7 @@ class GoldenAudiobook : MainAPI() { // all providers must be an instance of Main
             var episodes = mutableListOf<Episode>()
 
             document.select("audio a").mapNotNull {
-                val href = fixUrl(it.attr("href") ?: return null)
+                val href = fixUrl(it.attr("href") ?: return@mapNotNull null)
                 val name = c.toString()
 
                 c = c + 1
@@ -107,7 +107,7 @@ class GoldenAudiobook : MainAPI() { // all providers must be an instance of Main
                 val newdoc = app.get(it.attr("href")).document
 
                 newdoc.select("audio a").mapNotNull {
-                    val href = fixUrl(it.attr("href") ?: return null)
+                    val href = fixUrl(it.attr("href") ?: return@mapNotNull null)
                     val name = c.toString()
 
                     c = c + 1
@@ -118,12 +118,12 @@ class GoldenAudiobook : MainAPI() { // all providers must be an instance of Main
             }
 
             newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
-                this.posterUrl = poster.toString()
+                this.posterUrl = poster
                 // this.recommendations = recommendations
             }
         } else {
             newMovieLoadResponse(title, url, TvType.Movie, url) {
-                this.posterUrl = poster.toString()
+                this.posterUrl = poster
                 // this.recommendations = recommendations
             }
         }

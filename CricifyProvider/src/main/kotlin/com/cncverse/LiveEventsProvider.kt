@@ -145,7 +145,7 @@ class LiveEventsProvider : MainAPI() {
         }
         
         return buildString {
-            append("https://live-card.cricify.workers.dev/api/match-card?")
+            append("https://live-card-png.cricify.workers.dev/?")
             append("title=$title")
             append("&teamA=$teamA")
             append("&teamB=$teamB")
@@ -276,7 +276,7 @@ class LiveEventsProvider : MainAPI() {
     }
 
     override suspend fun load(url: String): LoadResponse {
-        val data = parseJson<LiveEventLoadData>(url)!!
+        val data = parseJson<LiveEventLoadData>(url)
 
         val eventInfo = data.eventInfo
         val plot = buildString {
@@ -309,7 +309,7 @@ class LiveEventsProvider : MainAPI() {
             subtitleCallback: (SubtitleFile) -> Unit,
             callback: (ExtractorLink) -> Unit
     ): Boolean {
-        val loadData = parseJson<LiveEventLoadData>(data) ?: return false
+        val loadData = parseJson<LiveEventLoadData>(data)
 
         // Fetch stream URLs from /channels/{slug}.txt
         val streamResponse = fetchChannelStreams(loadData.slug)
@@ -318,7 +318,7 @@ class LiveEventsProvider : MainAPI() {
             return false
         }
 
-        streamResponse!!.streamUrls!!.forEach { stream ->
+        streamResponse.streamUrls.forEach { stream ->
             val serverName = stream.title ?: "Server"
             val streamLink = stream.link ?: return@forEach
 
@@ -437,7 +437,7 @@ class LiveEventsProvider : MainAPI() {
 
                 val response = client.newCall(request).execute()
                 if (response.isSuccessful) {
-                    val encryptedData = response.body?.string()
+                    val encryptedData = response.body.string()
                     if (!encryptedData.isNullOrBlank()) {
                         val decryptedData = CryptoUtils.decryptData(encryptedData.trim())
                         if (!decryptedData.isNullOrBlank()) {

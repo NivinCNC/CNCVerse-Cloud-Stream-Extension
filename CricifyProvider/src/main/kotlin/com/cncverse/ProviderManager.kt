@@ -173,14 +173,14 @@ object ProviderManager {
                 
                 val response = client.newCall(request).execute()
                 if (response.isSuccessful) {
-                    val encryptedData = response.body?.string()
+                    val encryptedData = response.body.string()
                     if (!encryptedData.isNullOrBlank()) {
                         val decryptedData = CryptoUtils.decryptData(encryptedData.trim())
                         if (!decryptedData.isNullOrBlank()) {
                             val providers = parseJson<List<ProviderData>>(decryptedData)
                             // Filter providers that have catLink (exclude category headers)
-                            return@withContext providers?.filter { !it.catLink.isNullOrBlank() }
-                                ?.map { provider ->
+                            return@withContext providers.filter { !it.catLink.isNullOrBlank() }
+                                .map { provider ->
                                     mapOf(
                                         "id" to provider.id,
                                         "title" to provider.title,
@@ -218,13 +218,13 @@ object ProviderManager {
                 
                 val response = client.newCall(request).execute()
                 if (response.isSuccessful) {
-                    val encryptedData = response.body?.string()
+                    val encryptedData = response.body.string()
                     if (!encryptedData.isNullOrBlank()) {
                         val decryptedData = CryptoUtils.decryptData(encryptedData.trim())
                         if (!decryptedData.isNullOrBlank()) {
                             val events = parseJson<List<LiveEventData>>(decryptedData)
                             // Filter only published events
-                            return@withContext events?.filter { it.publish == 1 } ?: emptyList()
+                            return@withContext events.filter { it.publish == 1 }
                         }
                     }
                 }

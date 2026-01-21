@@ -76,7 +76,7 @@ object SubUtils {
                 val lan = getLanguage(it.lang) ?: "Unknown"
                 val suburl = it.url ?: ""
                 subtitleCallback.invoke(
-                    SubtitleFile(
+                    newSubtitleFile(
                         lan.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },  // Use label for the name
                         suburl     // Use extracted URL
                     )
@@ -106,7 +106,7 @@ object SubUtils {
             val lan = it.display ?: "Unknown"
             val suburl = it.url ?: ""
             subtitleCallback.invoke(
-                SubtitleFile(
+                newSubtitleFile(
                     lan.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },  // Use label for the name
                     suburl     // Use extracted URL
                 )

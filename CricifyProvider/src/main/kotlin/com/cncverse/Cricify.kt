@@ -96,7 +96,7 @@ class Cricify(
             .build()
 
         return customHttpClient.newCall(request).execute().use { response ->
-            response.body?.string() ?: ""
+            response.body.string()
         }
     }
 
@@ -140,6 +140,7 @@ class Cricify(
           // Parse the response to extract the DRM key
           val response = response.body.string()
           val jsonResponse = parseJson<Map<String, Any>>(response)
+          @Suppress("UNCHECKED_CAST")
           val keys = jsonResponse["keys"] as? List<Map<String, String>> ?: return ""
           val firstKey = keys.firstOrNull() ?: return ""
           firstKey["k"] ?: ""

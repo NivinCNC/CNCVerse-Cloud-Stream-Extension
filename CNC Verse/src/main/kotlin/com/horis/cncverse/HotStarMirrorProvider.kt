@@ -72,7 +72,7 @@ class HotStarMirrorProvider : MainAPI() {
     }
 
     private fun Element.toSearchResult(): SearchResponse? {
-        val id = selectFirst("a")?.attr("data-post") ?: attr("data-post") ?: return null
+        val id = selectFirst("a")?.attr("data-post") ?: attr("data-post")
         // val posterUrl =
         //     fixUrlNull(selectFirst(".card-img-container img, .top10-img img")?.attr("data-src"))
 

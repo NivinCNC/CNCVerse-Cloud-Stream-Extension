@@ -62,7 +62,7 @@ class TamilUltraProvider : MainAPI() { // all providers must be an instance of M
 
 
     private fun Element.toSearchResult(): SearchResponse? {
-        val title = this.selectFirst("div.data > h3 > a")?.text()?.toString()?.trim()
+        val title = this.selectFirst("div.data > h3 > a")?.text()?.trim()
             ?: return null
         val href = "https://cors.cncverse.workers.dev/" + fixUrl(this.selectFirst("div.data > h3 > a")?.attr("href").toString())
         val posterUrl = fixUrlNull(this.selectFirst("div.poster > img")?.attr("src"))

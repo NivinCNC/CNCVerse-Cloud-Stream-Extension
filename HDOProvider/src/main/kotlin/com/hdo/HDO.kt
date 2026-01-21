@@ -46,7 +46,7 @@ class HDO : TmdbProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ): Boolean {
-        val mediaData = AppUtils.parseJson<TmdbLink>(data)!!.toLinkData()
+        val mediaData = AppUtils.parseJson<TmdbLink>(data).toLinkData()
         
         Log.d("HDOProvider", "Loading links for: ${mediaData.title} (${mediaData.type})")
         
@@ -161,7 +161,7 @@ class HDO : TmdbProvider() {
             }
             
             val apiResponse = AppUtils.parseJson<HulaApiResponse>(response.text)
-            if (apiResponse?.results.isNullOrEmpty()) {
+            if (apiResponse.results.isNullOrEmpty()) {
                 Log.w("HDOProvider", "No results from Hula API")
                 return false
             }

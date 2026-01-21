@@ -339,7 +339,7 @@ class XonProvider : MainAPI() {
 
         cachedShows.filter {
             it.name.contains(query, ignoreCase = true) ||
-            (it.des?.contains(query, ignoreCase = true) == true)
+            (it.des.contains(query, ignoreCase = true))
         }.forEach { show ->
             val languageName = getLanguageName(show.language)
             searchResults.add(
@@ -374,7 +374,7 @@ class XonProvider : MainAPI() {
         // Search in movies
         cachedMovies.filter {
             it.name.contains(query, ignoreCase = true) ||
-            (it.des?.contains(query, ignoreCase = true) == true) ||
+            (it.des.contains(query, ignoreCase = true)) ||
             it.tags.contains(query, ignoreCase = true)
         }.forEach { movie ->
             val languageName = getLanguageName(movie.language)
@@ -427,7 +427,7 @@ class XonProvider : MainAPI() {
                     }
                 ) {
                     this.posterUrl = formatPosterUrl(show.cover.ifEmpty { show.thumb })
-                    this.plot = "${show.des ?: ""}\n\nLanguage: $languageName"
+                    this.plot = "${show.des}\n\nLanguage: $languageName"
                 }
             }
 
@@ -442,7 +442,7 @@ class XonProvider : MainAPI() {
                     dataUrl = "movie:${movie.id}"
                 ) {
                     this.posterUrl = formatPosterUrl(movie.cover.ifEmpty { movie.thumb })
-                    this.plot = "${movie.des ?: ""}\n\nLanguage: $languageName"
+                    this.plot = "${movie.des}\n\nLanguage: $languageName"
                 }
             }
 
@@ -459,7 +459,7 @@ class XonProvider : MainAPI() {
                     dataUrl = "episode:${episode.id}"
                 ) {
                     this.posterUrl = formatPosterUrl(episode.thumb)
-                    this.plot = "${episode.des ?: ""}\n\nSeason: ${season?.name ?: "Unknown"}\nLanguage: $languageName"
+                    this.plot = "${episode.des}\n\nSeason: ${season?.name ?: "Unknown"}\nLanguage: $languageName"
                 }
             }
 

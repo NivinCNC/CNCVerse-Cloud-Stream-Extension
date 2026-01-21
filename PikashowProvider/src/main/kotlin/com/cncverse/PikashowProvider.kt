@@ -638,11 +638,11 @@ class PikashowProvider : MainAPI() {
                             // Now get streaming URLs from video API
                             if (videoId != null && title != null) {
                                 // Capture a non-mutable local copy to avoid smart-cast / closure issues
-                                val safeTitle = title ?: "Unknown"
+                                val safeTitle = title
                                 val videoUrl = "$mainUrl/v1/api/video"
                                 val videoParams = mapOf(
                                     "type" to type,
-                                    "videoId" to videoId!!,
+                                    "videoId" to videoId,
                                     "title" to safeTitle,
                                     "noseasons" to "1",
                                     "noepisodes" to "0"
@@ -703,7 +703,7 @@ class PikashowProvider : MainAPI() {
         // Merge with response headers, giving priority to response headers
         val finalHeaders = if (videoData.headers != null) {
             val merged = baseHeaders.toMutableMap()
-            merged.putAll(videoData.headers!!)
+            merged.putAll(videoData.headers)
             // Ensure priority fields are still included even if response headers override
             videoData.heastr?.let { merged["heastr"] = it }
             videoData.uastr?.let { merged["user-agent"] = it }
@@ -771,9 +771,9 @@ class PikashowProvider : MainAPI() {
             // Use URL-based HDBV player parsing when no resolutions are available
             if (videoData.url != null) {
                 try {
-                    val streamingUrl = parseHDBVPlayerUrl(videoData.url!!)
+                    val streamingUrl = parseHDBVPlayerUrl(videoData.url)
                     if (streamingUrl.isNotEmpty()) {
-                        val urlOrigin = videoData.url!!.substringBefore("/", "https://") + "://" + videoData.url!!.substringAfter("://").substringBefore("/") + "/"
+                        val urlOrigin = videoData.url.substringBefore("/", "https://") + "://" + videoData.url.substringAfter("://").substringBefore("/") + "/"
                         callback.invoke(
                             newExtractorLink(
                                 name,

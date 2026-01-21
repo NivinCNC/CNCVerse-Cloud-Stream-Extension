@@ -211,7 +211,7 @@ class StreamFlixProvider : MainAPI() {
             
             val filteredItems = data.data.filter { 
                 !it.movieName.isNullOrBlank() &&
-                (it.movieName!!.contains(query, ignoreCase = true) ||
+                (it.movieName.contains(query, ignoreCase = true) ||
                 it.movieType?.contains(query, ignoreCase = true) == true ||
                 it.movieInfo?.contains(query, ignoreCase = true) == true)
             }
@@ -221,7 +221,7 @@ class StreamFlixProvider : MainAPI() {
                 if (item.isTV) {
                     searchResults.add(
                         newTvSeriesSearchResponse(
-                            name = item.movieName!!,
+                            name = item.movieName!!, 
                             url = "${item.movieKey}|tv",
                             type = TvType.TvSeries
                         ) {
