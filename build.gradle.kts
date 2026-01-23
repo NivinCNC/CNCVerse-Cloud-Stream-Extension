@@ -79,6 +79,8 @@ subprojects {
             buildConfigField("String", "CRICFY_FIREBASE_API_KEY", "\"${getSecret("CRICFY_FIREBASE_API_KEY")}\"")
             buildConfigField("String", "CRICFY_FIREBASE_APP_ID", "\"${getSecret("CRICFY_FIREBASE_APP_ID")}\"")
             buildConfigField("String", "CRICFY_FIREBASE_PROJECT_NUMBER", "\"${getSecret("CRICFY_FIREBASE_PROJECT_NUMBER")}\"")
+            buildConfigField("String", "SKLIVE_KEY", "\"${getSecret("SKLIVE_KEY")}\"")
+            buildConfigField("String", "SKLIVE_IV", "\"${getSecret("SKLIVE_IV")}\"")
         }
 
         compileOptions {

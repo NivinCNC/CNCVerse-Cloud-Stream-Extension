@@ -56,6 +56,8 @@ jobs:
           CRICFY_FIREBASE_API_KEY: ${{ secrets.CRICFY_FIREBASE_API_KEY }}
           CRICFY_FIREBASE_APP_ID: ${{ secrets.CRICFY_FIREBASE_APP_ID }}
           CRICFY_FIREBASE_PROJECT_NUMBER: ${{ secrets.CRICFY_FIREBASE_PROJECT_NUMBER }}
+          SKLIVE_KEY: ${{ secrets.SKLIVE_KEY }}
+          SKLIVE_IV: ${{ secrets.SKLIVE_IV }}
         run: |
           cd $GITHUB_WORKSPACE/src
           echo CONSUMET_API=$CONSUMET_API >> local.properties
@@ -79,6 +81,8 @@ jobs:
           CRICFY_FIREBASE_API_KEY: ${{ secrets.CRICFY_FIREBASE_API_KEY }}
           CRICFY_FIREBASE_APP_ID: ${{ secrets.CRICFY_FIREBASE_APP_ID }}
           CRICFY_FIREBASE_PROJECT_NUMBER: ${{ secrets.CRICFY_FIREBASE_PROJECT_NUMBER }}
+          SKLIVE_KEY: ${{ secrets.SKLIVE_KEY }}
+          SKLIVE_IV: ${{ secrets.SKLIVE_IV }}
         run: |
           cd $GITHUB_WORKSPACE/src
           chmod +x gradlew
