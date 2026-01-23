@@ -26,7 +26,7 @@ class LiveEventsProvider : MainAPI() {
 
     override var mainUrl = "https://sufyanpromax.space"
     override var name = "⚡SKTech Live Events"
-    override var lang = "en"
+    override var lang = "ta"
     override val hasMainPage = true
     override val hasChromecastSupport = true
     override val supportedTypes = setOf(TvType.Live)
