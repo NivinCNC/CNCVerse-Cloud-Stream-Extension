@@ -36,7 +36,7 @@ class RtallyProvider : MainAPI() {
         var context: android.content.Context? = null
     }
     
-    override var mainUrl = "https://www.rtally.site"
+    override var mainUrl = "https://www.rtally.store"
     override var name = "Rtally"
     override var lang = "ta"
     override val hasMainPage = true
@@ -74,23 +74,35 @@ class RtallyProvider : MainAPI() {
             cacheTime = 60,
             headers = headers
         ).document
-        val home = doc.select("div.grid:nth-child(1) > a[href]:not([target])").mapNotNull { toResult(it) }
+        val home = doc.select("section.md\\:col-span-3 div.grid a[href]").mapNotNull { toResult(it) }
         return newHomePageResponse(request.name, home, true)
     }
 
     private fun toResult(post: Element): SearchResponse {
-        val title = post.select("h2").text()
-        val check = post.select("div.absolute:nth-child(4)").text()
-        val url = mainUrl + (post.selectFirst("a")?.attr("href") ?: "")
+        val title = post.select("h4").text()
+        val url = mainUrl + post.attr("href")
+        // Try to get image from img tag first, fallback to background-image style
+        var posterUrl = post.select("img").attr("src")
+        if (posterUrl.isNullOrEmpty()) {
+            val styleAttr = post.select("div[style*=background-image]").attr("style")
+            posterUrl = styleAttr.substringAfter("url(").substringBefore(")").substringBefore("?")
+        }
+        val language = post.select("div.absolute.bottom-2.left-2").text()
+        val rating = post.select("div.absolute.bottom-2.right-2").text()
+        val type = post.select("h5.border").text()
+        
         return newAnimeSearchResponse(title, url, TvType.Movie) {
-            this.posterUrl = post.select(".relative.border.border-gray-500.rounded-lg.group img")
-                .attr("src")
+            this.posterUrl = posterUrl
             addDubStatus(
                 dubExist = when {
-                    "Dual" in check -> true
+                    "Dual" in language -> true
+                    "Hindi" in language -> true
+                    "Tamil" in language -> true
+                    "Telugu" in language -> true
+                    "Bangla" in language -> true
                     else -> false
                 },
-                subExist = false
+                subExist = "Eng-Sub" in language
             )
         }
     }
@@ -111,7 +123,12 @@ class RtallyProvider : MainAPI() {
             headers = headers
         ).document
         val title = doc.select(".font-serif").text()
-        val image = doc.selectFirst(".w-\\[200px\\] > img:nth-child(1)")?.attr("src")
+        // Try to get image from img tag first, fallback to background-image style
+        var image = doc.selectFirst(".w-\\[200px\\] > img:nth-child(1)")?.attr("src")
+        if (image.isNullOrEmpty()) {
+            val styleAttr = doc.select("div[style*=background-image]").first()?.attr("style")
+            image = styleAttr?.substringAfter("url(")?.substringBefore(")")?.substringBefore("?")
+        }
         val plot = doc.selectFirst("p.text-sm:nth-child(2)")?.text()
         val year = doc.select("div.infoDiv:nth-child(7) > span:nth-child(2)").text().toIntOrNull()
         val recommendations = doc.select(".gap-8").mapNotNull {
@@ -195,7 +212,7 @@ class RtallyProvider : MainAPI() {
             url.contains("vidhidepre") -> url.replace("/d/", "/v/") + " ; "
             //StreamWish
             url.contains("playerwish") -> url.replace("/d/", "/e/") + " ; "
-            else -> url
+            else -> url + " ; "
         }
     }
 
