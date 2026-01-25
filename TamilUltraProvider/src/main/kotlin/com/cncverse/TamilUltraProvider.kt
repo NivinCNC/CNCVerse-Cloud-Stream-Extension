@@ -14,7 +14,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 class TamilUltraProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://cors.cncverse.workers.dev/https://tamilultratv.com"
+    override var mainUrl = "https://cors.cncverse.workers.dev/https://tamilultra.icu"
     override var name = "TamilUltra"
     override val hasMainPage = true
     override var lang = "ta"
@@ -128,7 +128,7 @@ class TamilUltraProvider : MainAPI() { // all providers must be an instance of M
                     url
                 ).parsed<EmbedUrl>().embedUrl
             ).toString()
-        val link = "https://tamilultratv.com/" + m3u8.substringAfter(".php?")
+        val link = "https://tamilultra.icu/" + m3u8.substringAfter(".php?")
         return newMovieLoadResponse("$title (Use Vpn if content didn't play)", id, TvType.Live, "$m3u8,$link") {
                 this.posterUrl = poster
             }
@@ -141,7 +141,6 @@ class TamilUltraProvider : MainAPI() { // all providers must be an instance of M
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ): Boolean {
-      val referer = data.substringBefore(",")
       var link = data.substringAfter(",")
         // Log.d("TamilUltraProvider", "Link: $link")
         callback.invoke(
@@ -153,7 +152,7 @@ class TamilUltraProvider : MainAPI() { // all providers must be an instance of M
             )
             {
                 this.quality = Qualities.Unknown.value
-                this.referer = referer
+                this.referer = "https://tamilultra.icu/"
             }
         )
 
