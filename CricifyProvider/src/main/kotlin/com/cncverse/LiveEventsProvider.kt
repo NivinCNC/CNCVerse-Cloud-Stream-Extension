@@ -424,7 +424,7 @@ class LiveEventsProvider : MainAPI() {
         return withContext(Dispatchers.IO) {
             try {
                 val baseUrl = ProviderManager.getBaseUrl()
-                val url = "$baseUrl/channels/$slug.txt"
+                val url = "$baseUrl/channels/${slug.lowercase()}.txt"
 
                 val request =
                         Request.Builder()
