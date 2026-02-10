@@ -48,7 +48,7 @@ class DoFlixProvider : MainAPI() {
     private val headers = mapOf(
         "Connection" to "Keep-Alive",
         "User-Agent" to "dooflix",
-        "X-App-Version" to "304",
+        "X-App-Version" to "305",
         "X-Package-Name" to "com.king.moja"
     )
 
