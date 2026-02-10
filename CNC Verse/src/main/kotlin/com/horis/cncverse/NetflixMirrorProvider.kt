@@ -1,6 +1,5 @@
 package com.horis.cncverse
 
-import android.content.Context
 import com.horis.cncverse.entities.EpisodesData
 import com.horis.cncverse.entities.PlayList
 import com.horis.cncverse.entities.PostData
@@ -13,6 +12,7 @@ import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.Qualities
 import com.lagradost.cloudstream3.utils.httpsify
 import com.lagradost.cloudstream3.utils.getQualityFromName
+import android.content.Context
 import okhttp3.Headers
 import okhttp3.Interceptor
 import okhttp3.Response
@@ -23,7 +23,6 @@ class NetflixMirrorProvider : MainAPI() {
     companion object {
         var context: Context? = null
     }
-    
     override val supportedTypes = setOf(
         TvType.Movie,
         TvType.TvSeries,
@@ -32,8 +31,8 @@ class NetflixMirrorProvider : MainAPI() {
     )
     override var lang = "ta"
 
-    override var mainUrl = "https://net20.cc"
-    private var newUrl = "https://net51.cc"
+    override var mainUrl = "https://net22.cc"
+    private var newUrl = "https://net52.cc"
     override var name = "Netflix"
 
     override val hasMainPage = true
@@ -43,9 +42,7 @@ class NetflixMirrorProvider : MainAPI() {
     )
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse? {
-        // Show star popup on first visit (shared across all CNCVerse plugins)
         context?.let { StarPopupHelper.showStarPopupIfNeeded(it) }
-        
         cookie_value = if(cookie_value.isEmpty()) bypass(mainUrl) else cookie_value
         val cookies = mapOf(
             "t_hash_t" to cookie_value,
@@ -225,10 +222,12 @@ class NetflixMirrorProvider : MainAPI() {
             "ott" to "nf",
             "hd" to "on"
         )
+
+        val token = getVideoToken(mainUrl, newUrl, id, cookies)
         val playlist = app.get(
-            "$newUrl/tv/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}",
+            "$newUrl/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}&h=$token",
             headers,
-            referer = "$mainUrl/home",
+            referer = "$newUrl/",
             cookies = cookies
         ).parsed<PlayList>()
 
@@ -238,11 +237,17 @@ class NetflixMirrorProvider : MainAPI() {
                     newExtractorLink(
                         name,
                         it.label,
-                        """$newUrl${it.file.replace("/tv/", "/")}""",
+                        newUrl + it.file,
                         type = ExtractorLinkType.M3U8
                     ) {
                         this.referer = "$newUrl/"
-                        this.quality = getQualityFromName(it.file.substringAfter("q=", ""))
+                        this.headers = mapOf(
+                            "User-Agent" to "Mozilla/5.0 (Android) ExoPlayer",
+                            "Accept" to "*/*",
+                            "Accept-Encoding" to "identity",
+                            "Connection" to "keep-alive",
+                            "Cookie" to "hd=on"
+                        )
                     }
                 )
             }
@@ -251,29 +256,17 @@ class NetflixMirrorProvider : MainAPI() {
                 subtitleCallback.invoke(
                     newSubtitleFile(
                         track.label.toString(),
-                        httpsify(track.file.toString())
-                    )
+                        httpsify(track.file.toString().replace("\\", "")),
+                    ) {
+                        this.headers = mapOf(
+                            "Referer" to "$newUrl/"
+                        )
+                    }
                 )
             }
         }
 
         return true
-    }
-
-    @Suppress("ObjectLiteralToLambda")
-    override fun getVideoInterceptor(extractorLink: ExtractorLink): Interceptor? {
-        return object : Interceptor {
-            override fun intercept(chain: Interceptor.Chain): Response {
-                val request = chain.request()
-                if (request.url.toString().contains(".m3u8")) {
-                    val newRequest = request.newBuilder()
-                        .header("Cookie", "hd=on")
-                        .build()
-                    return chain.proceed(newRequest)
-                }
-                return chain.proceed(request)
-            }
-        }
     }
 
     data class Id(

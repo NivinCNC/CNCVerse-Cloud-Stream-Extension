@@ -32,8 +32,8 @@ class DisneyPlusProvider : MainAPI() {
     )
     override var lang = "ta"
 
-    override var mainUrl = "https://net20.cc"
-    private var newUrl = "https://net51.cc"
+    override var mainUrl = "https://net22.cc"
+    private var newUrl = "https://net52.cc"
     override var name = "Disney Plus"
 
     override val hasMainPage = true
