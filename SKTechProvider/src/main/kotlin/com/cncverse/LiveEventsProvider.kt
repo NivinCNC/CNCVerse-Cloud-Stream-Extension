@@ -24,7 +24,7 @@ class LiveEventsProvider : MainAPI() {
         var context: android.content.Context? = null
     }
 
-    override var mainUrl = "https://sufyanpromax.space"
+    override var mainUrl = "https://welalagaa.site"
     override var name = "⚡SKTech Live Events"
     override var lang = "ta"
     override val hasMainPage = true

@@ -21,6 +21,9 @@ import com.lagradost.cloudstream3.base64Encode
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.nio.charset.StandardCharsets
+import javax.crypto.Cipher
+import javax.crypto.spec.SecretKeySpec
+import javax.crypto.spec.IvParameterSpec
 
 class HeaderReplacementInterceptor(private val customHeaders: Map<String, String>) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
@@ -100,6 +103,48 @@ class Cricify(
         }
     }
 
+    private fun decryptContent(content: String): String {
+        return try {
+            // Check if content is already valid M3U
+            if (content.startsWith("#EXTM3U") || content.startsWith("#EXTINF") || content.startsWith("#KODIPROP")) {
+                return content
+            }
+
+            val trimmedContent = content.trim()
+            
+            // Try to decrypt encrypted content
+            if (trimmedContent.length < 79) {
+                return trimmedContent // Too short to be encrypted, return as-is
+            }
+
+            // Extract parts for decryption
+            val part1 = trimmedContent.substring(0, 10)
+            val part2 = trimmedContent.substring(34, trimmedContent.length - 54)
+            val part3 = trimmedContent.substring(trimmedContent.length - 10)
+            val encryptedData = part1 + part2 + part3
+
+            val ivBase64 = trimmedContent.substring(10, 34)
+            val keyBase64 = trimmedContent.substring(trimmedContent.length - 54, trimmedContent.length - 10)
+
+            // Decode from Base64
+            val iv = Base64.decode(ivBase64, Base64.DEFAULT)
+            val key = Base64.decode(keyBase64, Base64.DEFAULT)
+            val encrypted = Base64.decode(encryptedData, Base64.DEFAULT)
+
+            // Decrypt using AES/CBC/PKCS5Padding
+            val cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING")
+            val secretKey = SecretKeySpec(key, "AES")
+            val ivSpec = IvParameterSpec(iv)
+            cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec)
+            val decrypted = cipher.doFinal(encrypted)
+
+            String(decrypted, StandardCharsets.UTF_8)
+        } catch (e: Exception) {
+            println("Decryption failed: ${e.message}")
+            content // Return original content if decryption fails
+        }
+    }
+
   private fun getMpdStream(url: String, customHeaders: Map<String, String>): String {
         val client = OkHttpClient.Builder()
             .addInterceptor(HeaderReplacementInterceptor(customHeaders))
@@ -154,7 +199,9 @@ class Cricify(
         // Show star popup on first visit (shared across all CNCVerse plugins)
         Cricify.context?.let { StarPopupHelper.showStarPopupIfNeeded(it) }
         
-        val data = IptvPlaylistParser().parseM3U(getWithCustomHeaders(mainUrl))
+        val rawContent = getWithCustomHeaders(mainUrl)
+        val decryptedContent = decryptContent(rawContent)
+        val data = IptvPlaylistParser().parseM3U(decryptedContent)
         return newHomePageResponse(data.items.groupBy{it.attributes["group-title"]}.map { group ->
             val title = group.key ?: ""
             val show = group.value.map { channel ->
@@ -184,7 +231,9 @@ class Cricify(
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
-        val data = IptvPlaylistParser().parseM3U(getWithCustomHeaders(mainUrl))
+        val rawContent = getWithCustomHeaders(mainUrl)
+        val decryptedContent = decryptContent(rawContent)
+        val data = IptvPlaylistParser().parseM3U(decryptedContent)
         return data.items.filter { it.title?.contains(query,ignoreCase = true) ?: false }.map { channel ->
                 val streamurl = channel.url.toString()
                 val channelname = channel.title.toString()

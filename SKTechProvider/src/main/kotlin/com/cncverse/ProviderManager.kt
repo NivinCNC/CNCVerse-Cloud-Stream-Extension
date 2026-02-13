@@ -85,8 +85,8 @@ data class LiveEventFormat(
 
 object ProviderManager {
     // SK Tech API URLs
-    private const val CATEGORIES_URL = "https://sufyanpromax.space/categories.txt"
-    private const val EVENTS_URL = "https://sufyanpromax.space/events.txt"
+    private const val CATEGORIES_URL = "https://welalagaa.site/categories.txt"
+    private const val EVENTS_URL = "https://welalagaa.site/events.txt"
     
     // Helper function to convert SK Tech date/time format to expected format
     private fun parseDateTime(date: String?, time: String?): String? {
