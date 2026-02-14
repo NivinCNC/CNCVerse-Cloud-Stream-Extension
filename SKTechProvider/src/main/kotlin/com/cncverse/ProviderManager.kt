@@ -84,9 +84,11 @@ data class LiveEventFormat(
 )
 
 object ProviderManager {
-    // SK Tech API URLs
-    private const val CATEGORIES_URL = "https://welalagaa.site/categories.txt"
-    private const val EVENTS_URL = "https://welalagaa.site/events.txt"
+    // Default fallback base URL (will be replaced by Firebase Remote Config)
+    private const val DEFAULT_BASE_URL = "https://matkeritnagurorxbxb.store"
+    
+    // Cached base URL from Firebase
+    private var cachedBaseUrl: String? = null
     
     // Helper function to convert SK Tech date/time format to expected format
     private fun parseDateTime(date: String?, time: String?): String? {
@@ -115,11 +117,35 @@ object ProviderManager {
     // Fallback providers (empty for SK Tech, will fetch from API)
     private val fallbackProviders = emptyList<Map<String, Any>>()
     
+    /**
+     * Gets the base URL from Firebase Remote Config
+     * Falls back to default URL if Firebase fetch fails
+     */
+    private suspend fun getBaseUrl(): String {
+        // Return cached URL if available
+        cachedBaseUrl?.let { return it }
+        
+        // Try to fetch from Firebase Remote Config
+        val firebaseUrl = FirebaseRemoteConfigFetcher.getBaseApiUrl()
+        if (!firebaseUrl.isNullOrBlank()) {
+            cachedBaseUrl = firebaseUrl
+            return cachedBaseUrl!!
+        }
+        
+        // Fall back to default URL
+        cachedBaseUrl = DEFAULT_BASE_URL
+        return DEFAULT_BASE_URL
+    }
+    
     suspend fun fetchProviders(): List<Map<String, Any>> {
         return withContext(Dispatchers.IO) {
             try {
+                // Get the base URL (from Firebase or fallback) and construct categories URL
+                val baseUrl = getBaseUrl()
+                val categoriesUrl = "$baseUrl/categories.txt"
+                
                 val request = Request.Builder()
-                    .url(CATEGORIES_URL)
+                    .url(categoriesUrl)
                     .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
                     .build()
                 
@@ -184,8 +210,12 @@ object ProviderManager {
     suspend fun fetchLiveEvents(): List<LiveEventData> {
         return withContext(Dispatchers.IO) {
             try {
+                // Get the base URL (from Firebase or fallback) and construct events URL
+                val baseUrl = getBaseUrl()
+                val eventsUrl = "$baseUrl/events.txt"
+                
                 val request = Request.Builder()
-                    .url(EVENTS_URL)
+                    .url(eventsUrl)
                     .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
                     .build()
                 

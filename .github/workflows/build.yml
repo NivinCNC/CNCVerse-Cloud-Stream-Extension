@@ -58,6 +58,9 @@ jobs:
           CRICFY_FIREBASE_PROJECT_NUMBER: ${{ secrets.CRICFY_FIREBASE_PROJECT_NUMBER }}
           SKLIVE_KEY: ${{ secrets.SKLIVE_KEY }}
           SKLIVE_IV: ${{ secrets.SKLIVE_IV }}
+          SKTECH_FIREBASE_APP_ID: ${{ secrets.SKTECH_FIREBASE_APP_ID }}
+          SKTECH_FIREBASE_API_KEY: ${{ secrets.SKTECH_FIREBASE_API_KEY }}
+          SKTECH_FIREBASE_PROJECT_NUMBER: ${{ secrets.SKTECH_FIREBASE_PROJECT_NUMBER }}
         run: |
           cd $GITHUB_WORKSPACE/src
           echo CONSUMET_API=$CONSUMET_API >> local.properties
@@ -68,6 +71,9 @@ jobs:
           echo CRICFY_FIREBASE_API_KEY=$CRICFY_FIREBASE_API_KEY >> local.properties
           echo CRICFY_FIREBASE_APP_ID=$CRICFY_FIREBASE_APP_ID >> local.properties
           echo CRICFY_FIREBASE_PROJECT_NUMBER=$CRICFY_FIREBASE_PROJECT_NUMBER >> local.properties
+          echo SKTECH_FIREBASE_APP_ID=$SKTECH_FIREBASE_APP_ID >> local.properties
+          echo SKTECH_FIREBASE_API_KEY=$SKTECH_FIREBASE_API_KEY >> local.properties
+          echo SKTECH_FIREBASE_PROJECT_NUMBER=$SKTECH_FIREBASE_PROJECT_NUMBER >> local.properties
     
       - name: Build Plugins
         env:
@@ -83,6 +89,9 @@ jobs:
           CRICFY_FIREBASE_PROJECT_NUMBER: ${{ secrets.CRICFY_FIREBASE_PROJECT_NUMBER }}
           SKLIVE_KEY: ${{ secrets.SKLIVE_KEY }}
           SKLIVE_IV: ${{ secrets.SKLIVE_IV }}
+          SKTECH_FIREBASE_APP_ID: ${{ secrets.SKTECH_FIREBASE_APP_ID }}
+          SKTECH_FIREBASE_API_KEY: ${{ secrets.SKTECH_FIREBASE_API_KEY }}
+          SKTECH_FIREBASE_PROJECT_NUMBER: ${{ secrets.SKTECH_FIREBASE_PROJECT_NUMBER }}
         run: |
           cd $GITHUB_WORKSPACE/src
           chmod +x gradlew
