@@ -1,0 +1,133 @@
+name: 🐞 Issue report
+description: Report a source issue (verify source before submitting)
+title: "[Site Issue] "
+labels: [Bug]
+assignees: NivinCNC
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Checklist (Required before submitting)
+        You must verify that the source is working in your browser.
+        Issues without proof may be closed.
+
+  - type: checkboxes
+    id: source-verification
+    attributes:
+      label: Source Verification
+      description: Confirm all before submitting
+      options:
+        - label: I have verified that the original source/website is working
+          required: true
+        - label: I have attached screenshots showing the source working
+          required: true
+        - label: I am using the latest version of the extension
+          required: true
+        - label: I have tried clearing cache/restarting the app
+          required: true
+
+  - type: input
+    id: source
+    attributes:
+      label: Extension Name
+      description: You can find the extension name in the app.
+      placeholder: Example: "CNCVerse"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: issue-type
+    attributes:
+      label: Issue Type
+      options:
+        - Site is broken/offline
+        - Duplicate site
+        - Other issue
+    validations:
+      required: true
+
+  - type: input
+    id: language
+    attributes:
+      label: Source language
+      placeholder: Example: "Tamil"
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce-steps
+    attributes:
+      label: Steps to reproduce
+      description: Provide an example of the issue. Be as specific as possible.
+      placeholder: |
+        Example:
+          1. Open a movie/series
+          2. Try to play an episode
+          3. Error occurs
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected behavior
+      placeholder: Example: "Playback should start normally"
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: Actual behavior
+      placeholder: Example: "No links found" or "Playback error"
+    validations:
+      required: true
+
+  - type: textarea
+    id: source-screenshot
+    attributes:
+      label: Screenshot of Source Working (Required)
+      description: Upload screenshot showing the source working in a browser
+      placeholder: Drag and drop image here
+    validations:
+      required: true
+
+  - type: textarea
+    id: error-screenshot
+    attributes:
+      label: Screenshot of Error in Cloudstream (Required)
+      description: Upload screenshot showing the issue inside Cloudstream
+      placeholder: Drag and drop image here
+    validations:
+      required: true
+
+  - type: input
+    id: cs-version
+    attributes:
+      label: CloudStream Version
+      description: You can find your Cloudstream version in Settings at the bottom.
+      placeholder: Example: "Red icon - v4.3.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: other-details
+    attributes:
+      label: Other details
+      placeholder: Additional details and attachments.
+
+  - type: checkboxes
+    id: acknowledgements
+    attributes:
+      label: Acknowledgements
+      description: Your issue will be closed if these are not completed.
+      options:
+        - label: I have searched existing issues and this is not a duplicate.
+          required: true
+        - label: I have written a short but informative title.
+          required: true
+        - label: I have updated the app to the latest version.
+          required: true
+        - label: I will fill out all requested information in this form.
+          required: true
