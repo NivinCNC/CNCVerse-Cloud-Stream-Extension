@@ -4,6 +4,7 @@ title: "[Site Issue] "
 labels: [Bug]
 assignees: NivinCNC
 body:
+
   - type: markdown
     attributes:
       value: |
