@@ -1,6 +1,6 @@
 name: 🐞 Issue report
 description: Report a source issue (verify source before submitting)
-title: "[Site Issue] "
+title: "[Extension Issue] "
 labels: [Bug]
 assignees: NivinCNC
 body:
