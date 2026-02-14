@@ -32,7 +32,8 @@ body:
     attributes:
       label: Extension Name
       description: You can find the extension name in the app.
-      placeholder: Example: "CNCVerse"
+      placeholder: |
+        Example: "CNCVerse"
     validations:
       required: true
 
@@ -51,7 +52,8 @@ body:
     id: language
     attributes:
       label: Source language
-      placeholder: Example: "Tamil"
+      placeholder: |
+        Example: "Tamil"
     validations:
       required: true
 
@@ -72,7 +74,8 @@ body:
     id: expected-behavior
     attributes:
       label: Expected behavior
-      placeholder: Example: "Playback should start normally"
+      placeholder: |
+        Example: "Playback should start normally"
     validations:
       required: true
 
@@ -80,7 +83,8 @@ body:
     id: actual-behavior
     attributes:
       label: Actual behavior
-      placeholder: Example: "No links found" or "Playback error"
+      placeholder: |
+        Example: "No links found" or "Playback error"
     validations:
       required: true
 
@@ -107,7 +111,8 @@ body:
     attributes:
       label: CloudStream Version
       description: You can find your Cloudstream version in Settings at the bottom.
-      placeholder: Example: "Red icon - v4.3.0"
+      placeholder: |
+        Example: "Red icon - v4.3.0"
     validations:
       required: true
 
