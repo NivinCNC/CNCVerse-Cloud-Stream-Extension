@@ -23,10 +23,15 @@ class MoviezwapProvider : MainAPI() {
 
     companion object {
         var context: Context? = null
+        
+        // Common selectors for WordPress-based movie sites
+        private const val POST_SELECTORS = "article.post, article.type-post, article[class*='post'], " +
+            "div.post, div.post-item, div.item, div.movie-item, div.movie, " +
+            "div.video-block, div.video-item, div[class*='movie'], " +
+            "li.post, li.movie-item, li[class*='movie']"
     }
 
-    // Common category URL patterns for Telugu movie sites
-    // These may need adjustment based on actual site structure
+    // TODO: Verify category URLs once site is accessible - current URLs are based on common patterns
     override val mainPage = mainPageOf(
         "$mainUrl/category/telugu-movies" to "Telugu Movies",
         "$mainUrl/category/telugu-dubbed" to "Telugu Dubbed",
@@ -57,12 +62,7 @@ class MoviezwapProvider : MainAPI() {
         }
 
         // Comprehensive selectors for various WordPress/custom themes
-        val home = document.select(
-            "article.post, article.type-post, article[class*='post'], " +
-            "div.post, div.post-item, div.item, div.movie-item, div.movie, " +
-            "div.video-block, div.video-item, div[class*='movie'], " +
-            "li.post, li.movie-item, li[class*='movie']"
-        ).mapNotNull {
+        val home = document.select(POST_SELECTORS).mapNotNull {
             it.toSearchResult()
         }
 
@@ -106,12 +106,7 @@ class MoviezwapProvider : MainAPI() {
             return emptyList()
         }
         
-        return document.select(
-            "article.post, article.type-post, article[class*='post'], " +
-            "div.post, div.post-item, div.item, div.movie-item, div.movie, " +
-            "div.video-block, div.video-item, div[class*='movie'], " +
-            "li.post, li.movie-item, li[class*='movie']"
-        ).mapNotNull {
+        return document.select(POST_SELECTORS).mapNotNull {
             it.toSearchResult()
         }
     }
@@ -130,11 +125,12 @@ class MoviezwapProvider : MainAPI() {
             ".entry-title, .movie-title, .post-title, .film-title"
         )?.text()?.trim() ?: return null
         
-        // Try multiple poster selectors
+        // Try multiple poster selectors - find element once, then check attributes
+        val posterImg = document.selectFirst(".entry-content img, .movie-poster img, .wp-post-image, .film-poster img")
         val poster = fixUrlNull(
-            document.selectFirst(".entry-content img, .movie-poster img, .wp-post-image, .film-poster img")?.attr("data-src")
-                ?: document.selectFirst(".entry-content img, .movie-poster img, .wp-post-image, .film-poster img")?.attr("data-lazy-src")
-                ?: document.selectFirst(".entry-content img, .movie-poster img, .wp-post-image, .film-poster img")?.attr("src")
+            posterImg?.attr("data-src")
+                ?: posterImg?.attr("data-lazy-src")
+                ?: posterImg?.attr("src")
         )
         
         val description = document.selectFirst(
@@ -218,8 +214,10 @@ class MoviezwapProvider : MainAPI() {
                     }
                     else -> {
                         // Try to extract from iframe using CloudStream's built-in extractors
-                        safeApiCall {
+                        val extractorResult = safeApiCall {
                             loadExtractor(fixedLink, subtitleCallback, callback)
+                        }
+                        if (extractorResult != null) {
                             foundLinks = true
                         }
                     }
