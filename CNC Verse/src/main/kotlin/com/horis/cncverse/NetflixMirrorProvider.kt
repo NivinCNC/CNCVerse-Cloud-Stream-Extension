@@ -31,8 +31,7 @@ class NetflixMirrorProvider : MainAPI() {
     )
     override var lang = "ta"
 
-    override var mainUrl = "https://net22.cc"
-    private var newUrl = "https://net52.cc"
+    override var mainUrl = "https://net52.cc"
     override var name = "Netflix"
 
     override val hasMainPage = true
@@ -223,11 +222,11 @@ class NetflixMirrorProvider : MainAPI() {
             "hd" to "on"
         )
 
-        val token = getVideoToken(mainUrl, newUrl, id, cookies)
+        val token = getVideoToken(mainUrl, mainUrl, id, cookies)
         val playlist = app.get(
-            "$newUrl/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}&h=$token",
+            "$mainUrl/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}&h=$token",
             headers,
-            referer = "$newUrl/",
+            referer = "$mainUrl/",
             cookies = cookies
         ).parsed<PlayList>()
 
@@ -237,10 +236,10 @@ class NetflixMirrorProvider : MainAPI() {
                     newExtractorLink(
                         name,
                         it.label,
-                        newUrl + it.file,
+                        mainUrl + it.file,
                         type = ExtractorLinkType.M3U8
                     ) {
-                        this.referer = "$newUrl/"
+                        this.referer = "$mainUrl/"
                         this.headers = mapOf(
                             "User-Agent" to "Mozilla/5.0 (Android) ExoPlayer",
                             "Accept" to "*/*",
@@ -259,7 +258,7 @@ class NetflixMirrorProvider : MainAPI() {
                         httpsify(track.file.toString().replace("\\", "")),
                     ) {
                         this.headers = mapOf(
-                            "Referer" to "$newUrl/"
+                            "Referer" to "$mainUrl/"
                         )
                     }
                 )
