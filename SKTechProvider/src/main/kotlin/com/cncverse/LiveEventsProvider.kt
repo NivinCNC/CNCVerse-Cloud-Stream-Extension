@@ -22,9 +22,11 @@ import okhttp3.Request
 class LiveEventsProvider : MainAPI() {
     companion object {
         var context: android.content.Context? = null
+        private var cachedWebUrl: String? = null
+        private const val DEFAULT_WEB_URL = "https://welalagaa.site"
     }
 
-    override var mainUrl = "https://welalagaa.site"
+    override var mainUrl = DEFAULT_WEB_URL
     override var name = "⚡SKTech Live Events"
     override var lang = "ta"
     override val hasMainPage = true
@@ -36,6 +38,28 @@ class LiveEventsProvider : MainAPI() {
                     .connectTimeout(30, TimeUnit.SECONDS)
                     .readTimeout(30, TimeUnit.SECONDS)
                     .build()
+
+    /**
+     * Gets the web URL from Firebase Remote Config
+     * Falls back to default URL if Firebase fetch fails
+     */
+    private suspend fun getWebUrl(): String {
+        // Return cached URL if available
+        cachedWebUrl?.let { return it }
+        
+        // Try to fetch from Firebase Remote Config
+        val firebaseUrl = FirebaseRemoteConfigFetcher.getBaseApiUrl()
+        if (!firebaseUrl.isNullOrBlank()) {
+            cachedWebUrl = firebaseUrl
+            mainUrl = cachedWebUrl!!
+            return cachedWebUrl!!
+        }
+        
+        // Fall back to default URL
+        cachedWebUrl = DEFAULT_WEB_URL
+        mainUrl = DEFAULT_WEB_URL
+        return DEFAULT_WEB_URL
+    }
 
     // Data classes for stream response from /channels/{slug}.txt
     data class ChannelStreamResponse(
@@ -441,7 +465,9 @@ class LiveEventsProvider : MainAPI() {
     private suspend fun fetchChannelStreams(slug: String): ChannelStreamResponse? {
         return withContext(Dispatchers.IO) {
             try {
-                val url = "$mainUrl/$slug.txt"
+                // Get the web URL from Firebase Remote Config (or use cached/default)
+                val webUrl = getWebUrl()
+                val url = "$webUrl/$slug.txt"
 
                 val request =
                         Request.Builder()
