@@ -11,8 +11,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 class MoviezwapProvider : MainAPI() {
-    // Updated domain as per user request
-    override var mainUrl = "https://www.moviezwap.surf"
+    // Using CORS proxy to bypass geo-blocks
+    override var mainUrl = "https://cors.cncverse.workers.dev/https://www.moviezwap.surf"
     override var name = "Moviezwap"
     override val hasMainPage = true
     override var lang = "te" // Telugu
@@ -31,12 +31,12 @@ class MoviezwapProvider : MainAPI() {
             "li.post, li.movie-item, li[class*='movie']"
     }
 
-    // TODO: Verify category URLs once site is accessible - current URLs are based on common patterns
+    // Main page categories based on typical Moviezwap URL patterns
     override val mainPage = mainPageOf(
-        "$mainUrl/category/telugu-movies" to "Telugu Movies",
-        "$mainUrl/category/telugu-dubbed" to "Telugu Dubbed",
-        "$mainUrl/category/latest-movies" to "Latest Movies",
-        "$mainUrl/category/tamil-movies" to "Tamil Movies"
+        "$mainUrl/telugu-movies" to "Telugu Movies",
+        "$mainUrl/tamil-movies" to "Tamil Movies",
+        "$mainUrl/dubbed-movies" to "Dubbed Movies",
+        "$mainUrl/hd-movies" to "HD Movies"
     )
 
     override suspend fun getMainPage(
