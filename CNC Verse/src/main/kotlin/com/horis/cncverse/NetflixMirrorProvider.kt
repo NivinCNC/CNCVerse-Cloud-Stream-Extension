@@ -31,8 +31,7 @@ class NetflixMirrorProvider : MainAPI() {
     )
     override var lang = "ta"
 
-    override var mainUrl = "https://net22.cc"
-    private var newUrl = "https://net52.cc"
+    override var mainUrl = "https://net52.cc"
     override var name = "Netflix"
 
     override val hasMainPage = true
@@ -43,7 +42,7 @@ class NetflixMirrorProvider : MainAPI() {
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse? {
         context?.let { StarPopupHelper.showStarPopupIfNeeded(it) }
-        cookie_value = if(cookie_value.isEmpty()) bypass(newUrl) else cookie_value
+        cookie_value = if(cookie_value.isEmpty()) bypass(mainUrl) else cookie_value
         val cookies = mapOf(
             "t_hash_t" to cookie_value,
             "user_token" to "233123f803cf02184bf6c67e149cdd50",
@@ -80,7 +79,7 @@ class NetflixMirrorProvider : MainAPI() {
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
-        cookie_value = if(cookie_value.isEmpty()) bypass(newUrl) else cookie_value
+        cookie_value = if(cookie_value.isEmpty()) bypass(mainUrl) else cookie_value
         val cookies = mapOf(
             "t_hash_t" to cookie_value,
             "hd" to "on",
@@ -102,7 +101,7 @@ class NetflixMirrorProvider : MainAPI() {
     }
 
     override suspend fun load(url: String): LoadResponse? {
-        cookie_value = if(cookie_value.isEmpty()) bypass(newUrl) else cookie_value
+        cookie_value = if(cookie_value.isEmpty()) bypass(mainUrl) else cookie_value
         val id = parseJson<Id>(url).id
         val cookies = mapOf(
             "t_hash_t" to cookie_value,
@@ -223,11 +222,10 @@ class NetflixMirrorProvider : MainAPI() {
             "hd" to "on"
         )
 
-        val token = getVideoToken(mainUrl, newUrl, id, cookies)
         val playlist = app.get(
-            "$newUrl/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}&h=$token",
+            "$mainUrl/mobile/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}",
             headers,
-            referer = "$newUrl/",
+            referer = "$mainUrl/",
             cookies = cookies
         ).parsed<PlayList>()
 
@@ -237,10 +235,10 @@ class NetflixMirrorProvider : MainAPI() {
                     newExtractorLink(
                         name,
                         it.label,
-                        newUrl + it.file,
+                        mainUrl + it.file,
                         type = ExtractorLinkType.M3U8
                     ) {
-                        this.referer = "$newUrl/"
+                        this.referer = "$mainUrl/"
                         this.headers = mapOf(
                             "User-Agent" to "Mozilla/5.0 (Android) ExoPlayer",
                             "Accept" to "*/*",
@@ -259,7 +257,7 @@ class NetflixMirrorProvider : MainAPI() {
                         httpsify(track.file.toString().replace("\\", "")),
                     ) {
                         this.headers = mapOf(
-                            "Referer" to "$newUrl/"
+                            "Referer" to "$mainUrl/"
                         )
                     }
                 )

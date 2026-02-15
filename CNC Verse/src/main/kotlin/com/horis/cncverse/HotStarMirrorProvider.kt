@@ -32,13 +32,25 @@ class HotStarMirrorProvider : MainAPI() {
     )
     override var lang = "ta"
 
-    override var mainUrl = "https://net22.cc"
-    private var newUrl = "https://net52.cc"
+    override var mainUrl = "https://net52.cc"
     override var name = "Hotstar"
 
     override val hasMainPage = true
     private var cookie_value = ""
     private val headers = mapOf(
+        "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+        "Accept-Language" to "en-IN,en-US;q=0.9,en;q=0.8",
+        "Cache-Control" to "max-age=0",
+        "Connection" to "keep-alive",
+        "sec-ch-ua" to "\"Not(A:Brand\";v=\"8\", \"Chromium\";v=\"144\", \"Android WebView\";v=\"144\"",
+        "sec-ch-ua-mobile" to "?0",
+        "sec-ch-ua-platform" to "\"Android\"",
+        "Sec-Fetch-Dest" to "document",
+        "Sec-Fetch-Mode" to "navigate",
+        "Sec-Fetch-Site" to "same-origin",
+        "Sec-Fetch-User" to "?1",
+        "Upgrade-Insecure-Requests" to "1",
+        "User-Agent" to "Mozilla/5.0 (Linux; Android 13; Pixel 5 Build/TQ3A.230901.001; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/144.0.7559.132 Safari/537.36 /OS.Gatu v3.0",
         "X-Requested-With" to "XMLHttpRequest"
     )
 
@@ -46,16 +58,17 @@ class HotStarMirrorProvider : MainAPI() {
         // Show star popup on first visit (shared across all CNCVerse plugins)
         context?.let { StarPopupHelper.showStarPopupIfNeeded(it) }
         
-        cookie_value = if(cookie_value.isEmpty()) bypass(newUrl) else cookie_value
+        cookie_value = if(cookie_value.isEmpty()) bypass(mainUrl) else cookie_value
         val cookies = mapOf(
             "t_hash_t" to cookie_value,
             "ott" to "hs",
             "hd" to "on"
         )
         val document = app.get(
-            "$mainUrl/mobile/home",
+            "$mainUrl/mobile/home?app=1",
             cookies = cookies,
-            referer = "$mainUrl/home",
+            headers = headers,
+            referer = "$mainUrl/mobile/home?app=1",
         ).document
         val items = document.select(".tray-container, #top10").map {
             it.toHomePageList()
@@ -83,7 +96,7 @@ class HotStarMirrorProvider : MainAPI() {
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
-        cookie_value = if(cookie_value.isEmpty()) bypass(newUrl) else cookie_value
+        cookie_value = if(cookie_value.isEmpty()) bypass(mainUrl) else cookie_value
         val cookies = mapOf(
             "t_hash_t" to cookie_value,
             "hd" to "on",
@@ -101,7 +114,7 @@ class HotStarMirrorProvider : MainAPI() {
     }
 
     override suspend fun load(url: String): LoadResponse? {
-        cookie_value = if(cookie_value.isEmpty()) bypass(newUrl) else cookie_value
+        cookie_value = if(cookie_value.isEmpty()) bypass(mainUrl) else cookie_value
         val id = parseJson<Id>(url).id
         val cookies = mapOf(
             "t_hash_t" to cookie_value,
@@ -224,7 +237,7 @@ class HotStarMirrorProvider : MainAPI() {
             "ott" to "hs"
         )
         val playlist = app.get(
-            "$newUrl/mobile/hs/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}",
+            "$mainUrl/mobile/hs/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}",
             headers,
             referer = "$mainUrl/home",
             cookies = cookies
@@ -236,10 +249,10 @@ class HotStarMirrorProvider : MainAPI() {
                     newExtractorLink(
                         name,
                         it.label,
-                        "$newUrl/${it.file}",
+                        "$mainUrl/${it.file}",
                         type = ExtractorLinkType.M3U8
                     ) {
-                        this.referer = "$newUrl/home"
+                        this.referer = "$mainUrl/home"
                         this.quality = getQualityFromName(it.file.substringAfter("q=", ""))
                     }
                 )
