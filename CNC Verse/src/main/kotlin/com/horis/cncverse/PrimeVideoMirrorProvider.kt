@@ -55,7 +55,7 @@ class PrimeVideoMirrorProvider : MainAPI() {
             "hd" to "on"
         )
         val data = app.get(
-            "$mainUrl/tv/pv/homepage.php",
+            "$mainUrl/pv/homepage.php",
             cookies = cookies,
             referer = "$mainUrl/home",
         ).parsed<MainPage>()
