@@ -61,6 +61,12 @@ jobs:
           SKTECH_FIREBASE_APP_ID: ${{ secrets.SKTECH_FIREBASE_APP_ID }}
           SKTECH_FIREBASE_API_KEY: ${{ secrets.SKTECH_FIREBASE_API_KEY }}
           SKTECH_FIREBASE_PROJECT_NUMBER: ${{ secrets.SKTECH_FIREBASE_PROJECT_NUMBER }}
+          CINETV_SECRET_KEY_ENCRYPTED: ${{ secrets.CINETV_SECRET_KEY_ENCRYPTED }}
+          CINETV_DES_KEY: ${{ secrets.CINETV_DES_KEY }}
+          CINETV_DES_IV: ${{ secrets.CINETV_DES_IV }}
+          CINETV_AES_KEY: ${{ secrets.CINETV_AES_KEY }}
+          CINETV_AES_IV: ${{ secrets.CINETV_AES_IV }}
+          CINETV_WS_SECRET: ${{ secrets.CINETV_WS_SECRET }}
         run: |
           cd $GITHUB_WORKSPACE/src
           echo CONSUMET_API=$CONSUMET_API >> local.properties
@@ -74,6 +80,12 @@ jobs:
           echo SKTECH_FIREBASE_APP_ID=$SKTECH_FIREBASE_APP_ID >> local.properties
           echo SKTECH_FIREBASE_API_KEY=$SKTECH_FIREBASE_API_KEY >> local.properties
           echo SKTECH_FIREBASE_PROJECT_NUMBER=$SKTECH_FIREBASE_PROJECT_NUMBER >> local.properties
+          echo CINETV_SECRET_KEY_ENCRYPTED=$CINETV_SECRET_KEY_ENCRYPTED >> local.properties
+          echo CINETV_DES_KEY=$CINETV_DES_KEY >> local.properties
+          echo CINETV_DES_IV=$CINETV_DES_IV >> local.properties
+          echo CINETV_AES_KEY=$CINETV_AES_KEY >> local.properties
+          echo CINETV_AES_IV=$CINETV_AES_IV >> local.properties
+          echo CINETV_WS_SECRET=$CINETV_WS_SECRET >> local.properties
     
       - name: Build Plugins
         env:
@@ -92,6 +104,12 @@ jobs:
           SKTECH_FIREBASE_APP_ID: ${{ secrets.SKTECH_FIREBASE_APP_ID }}
           SKTECH_FIREBASE_API_KEY: ${{ secrets.SKTECH_FIREBASE_API_KEY }}
           SKTECH_FIREBASE_PROJECT_NUMBER: ${{ secrets.SKTECH_FIREBASE_PROJECT_NUMBER }}
+          CINETV_SECRET_KEY_ENCRYPTED: ${{ secrets.CINETV_SECRET_KEY_ENCRYPTED }}
+          CINETV_DES_KEY: ${{ secrets.CINETV_DES_KEY }}
+          CINETV_DES_IV: ${{ secrets.CINETV_DES_IV }}
+          CINETV_AES_KEY: ${{ secrets.CINETV_AES_KEY }}
+          CINETV_AES_IV: ${{ secrets.CINETV_AES_IV }}
+          CINETV_WS_SECRET: ${{ secrets.CINETV_WS_SECRET }}
         run: |
           cd $GITHUB_WORKSPACE/src
           chmod +x gradlew

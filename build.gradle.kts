@@ -84,6 +84,12 @@ subprojects {
             buildConfigField("String", "SKTECH_FIREBASE_API_KEY", "\"${getSecret("SKTECH_FIREBASE_API_KEY")}\"")
             buildConfigField("String", "SKTECH_FIREBASE_APP_ID", "\"${getSecret("SKTECH_FIREBASE_APP_ID")}\"")
             buildConfigField("String", "SKTECH_FIREBASE_PROJECT_NUMBER", "\"${getSecret("SKTECH_FIREBASE_PROJECT_NUMBER")}\"")
+            buildConfigField("String", "CINETV_SECRET_KEY_ENCRYPTED", "\"${getSecret("CINETV_SECRET_KEY_ENCRYPTED")}\"")
+            buildConfigField("String", "CINETV_DES_KEY", "\"${getSecret("CINETV_DES_KEY")}\"")
+            buildConfigField("String", "CINETV_DES_IV", "\"${getSecret("CINETV_DES_IV")}\"")
+            buildConfigField("String", "CINETV_AES_KEY", "\"${getSecret("CINETV_AES_KEY")}\"")
+            buildConfigField("String", "CINETV_AES_IV", "\"${getSecret("CINETV_AES_IV")}\"")
+            buildConfigField("String", "CINETV_WS_SECRET", "\"${getSecret("CINETV_WS_SECRET")}\"")
         }
 
         compileOptions {
