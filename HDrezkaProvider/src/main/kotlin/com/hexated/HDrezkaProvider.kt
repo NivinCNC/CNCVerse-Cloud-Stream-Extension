@@ -154,7 +154,7 @@ class HDrezkaProvider : MainAPI() {
                 }
             }
             val episodes = document.select(
-                    "#simple-episodes-tabs a.b-simple_episode__item"
+                    "#simple-episodes-tabs .b-simple_episode__item"
                 ).map { ep ->
 
                     val season = ep.attr("data-season_id").toIntOrNull()
