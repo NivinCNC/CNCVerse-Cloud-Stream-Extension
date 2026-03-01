@@ -124,13 +124,18 @@ class LiveEventsProvider : MainAPI() {
 
         try {
             val dateFormat = SimpleDateFormat("yyyy/MM/dd HH:mm:ss Z", Locale.US)
-            val startTime = eventInfo.startTime?.let { dateFormat.parse(it)?.time } ?: return ""
-            val endTime = eventInfo.endTime?.let { dateFormat.parse(it)?.time } ?: return ""
+            val startTime = eventInfo.startTime?.let { dateFormat.parse(it)?.time }
+            val endTime = eventInfo.endTime?.let { dateFormat.parse(it)?.time }
 
+            // Apply exact logic from official app (rc.c.p and rc.c.o):
+            // 1. If end_time exists and has passed -> "ended"
+            // 2. Else if start_time exists and has passed -> "live"
+            // 3. Else -> "upcoming"
             return when {
-                now < startTime -> "🔜"
-                now in startTime..endTime -> "🔴"
-                else -> "✅"
+                endTime != null && now >= endTime -> "✅"
+                startTime != null && now >= startTime -> "🔴"
+                startTime != null && now < startTime -> "🔜"
+                else -> ""
             }
         } catch (e: Exception) {
             return ""
@@ -144,9 +149,36 @@ class LiveEventsProvider : MainAPI() {
         
         return try {
             val dateFormat = SimpleDateFormat("yyyy/MM/dd HH:mm:ss Z", Locale.US)
-            val startTime = eventInfo.startTime?.let { dateFormat.parse(it)?.time } ?: return false
-            val endTime = eventInfo.endTime?.let { dateFormat.parse(it)?.time } ?: return false
-            now in startTime..endTime
+            val startTime = eventInfo.startTime?.let { dateFormat.parse(it)?.time }
+            val endTime = eventInfo.endTime?.let { dateFormat.parse(it)?.time }
+            
+            // Logic:
+            // If end_time has passed -> false
+            // Else if start_time has passed -> true
+            // Else -> false
+            if (endTime != null && now >= endTime) {
+                false
+            } else if (startTime != null && now >= startTime) {
+                true
+            } else {
+                false
+            }
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    /**
+     * Check if event has ended based on its end date/time
+     */
+    private fun isEventEnded(event: LiveEventData): Boolean {
+        val eventInfo = event.eventInfo ?: return false
+        val now = System.currentTimeMillis()
+
+        return try {
+            val dateFormat = SimpleDateFormat("yyyy/MM/dd HH:mm:ss Z", Locale.US)
+            val endTime = eventInfo.endTime?.let { dateFormat.parse(it)?.time }
+            endTime != null && now >= endTime
         } catch (e: Exception) {
             false
         }
@@ -165,6 +197,7 @@ class LiveEventsProvider : MainAPI() {
         val teamBImg = eventInfo?.teamBFlag ?: ""
         val eventLogo = eventInfo?.eventLogo ?: ""
         val isLive = isEventLive(event)
+        val isEnded = isEventEnded(event)
         
         // Format time for display
         val time = try {
@@ -188,6 +221,7 @@ class LiveEventsProvider : MainAPI() {
             if (eventLogo.isNotBlank()) append("&eventLogo=$eventLogo")
             if (time.isNotBlank()) append("&time=$time")
             append("&isLive=$isLive")
+            append("&isEnded=$isEnded")
         }
     }
 
