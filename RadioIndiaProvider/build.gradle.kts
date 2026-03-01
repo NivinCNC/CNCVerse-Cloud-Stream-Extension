@@ -8,7 +8,7 @@ android {
 }
 
 cloudstream {
-    language = "hi"
+    language = "ta"
 
     description = "Radio India Provider"
     authors = listOf("NivinCNC")
