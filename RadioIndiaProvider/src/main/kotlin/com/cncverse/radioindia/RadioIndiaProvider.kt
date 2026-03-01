@@ -12,6 +12,10 @@ import java.nio.charset.StandardCharsets
 import java.net.URLDecoder
 
 class RadioIndiaProvider : MainAPI() {
+    companion object {
+        var context: android.content.Context? = null
+    }
+
     override var mainUrl = "https://www.radioindia.in"
     override var name = "Radio India"
     override val hasMainPage = true
@@ -40,6 +44,7 @@ class RadioIndiaProvider : MainAPI() {
         page: Int,
         request: MainPageRequest
     ): HomePageResponse {
+        RadioIndiaProvider.context?.let { StarPopupHelper.showStarPopupIfNeeded(it) }
         val document = app.get(request.data).document
         val home = document.select("ul.mdc-grid-list__tiles li a").mapNotNull {
             it.toSearchResponse()

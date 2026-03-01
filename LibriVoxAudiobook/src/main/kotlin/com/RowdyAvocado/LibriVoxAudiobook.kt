@@ -23,6 +23,10 @@ import com.lagradost.cloudstream3.utils.Qualities
 import com.lagradost.cloudstream3.utils.newExtractorLink
 
 class LibriVoxAudiobook : MainAPI() { // all providers must be an instance of MainAPI
+    companion object {
+        var context: android.content.Context? = null
+    }
+
     override var mainUrl = "https://librivox.org"
     override var name = "Librivox Audiobook"
 
@@ -42,6 +46,7 @@ class LibriVoxAudiobook : MainAPI() { // all providers must be an instance of Ma
             )
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
+        LibriVoxAudiobook.context?.let { StarPopupHelper.showStarPopupIfNeeded(it) }
         val reqlink = request.data
 
         val home =

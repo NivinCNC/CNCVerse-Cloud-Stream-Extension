@@ -16,6 +16,10 @@ import org.jsoup.nodes.Element
 import java.util.*
 
 class HDrezkaProvider : MainAPI() {
+    companion object {
+        var context: android.content.Context? = null
+    }
+
     override var mainUrl = "https://rezka.ag"
     override var name = "HDrezka"
     override val hasMainPage = true
@@ -39,6 +43,8 @@ class HDrezkaProvider : MainAPI() {
         page: Int,
         request: MainPageRequest
     ): HomePageResponse {
+        HDrezkaProvider.context?.let { StarPopupHelper.showStarPopupIfNeeded(it) }
+        
         val url = request.data.split("?")
         val home = app.get("${url.first()}page/$page/?${url.last()}").document.select(
             "div.b-content__inline_items div.b-content__inline_item"
