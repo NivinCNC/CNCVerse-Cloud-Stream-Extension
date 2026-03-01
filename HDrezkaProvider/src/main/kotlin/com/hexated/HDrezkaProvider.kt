@@ -88,8 +88,8 @@ class HDrezkaProvider : MainAPI() {
         val document = app.get(url).document
 
         val id = url.split("/").last().split("-").first()
-        val title = (document.selectFirst("div.b-post__origtitle")?.text()?.trim()
-            ?: document.selectFirst("div.b-post__title h1")?.text()?.trim()).toString()
+        val title = (document.selectFirst("div.b-post__title h1")?.text()?.trim()
+            ?: document.selectFirst("div.b-post__origtitle")?.text()?.trim()).toString()
         val poster = fixUrlNull(document.selectFirst("div.b-sidecover img")?.attr("src"))
         val tags =
             document.select("table.b-post__info > tbody > tr:contains(Жанр) span[itemprop=genre]")
