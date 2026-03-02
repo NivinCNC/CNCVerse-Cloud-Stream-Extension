@@ -1,8 +1,9 @@
 ### ❤️ Support
 
-If you find this project helpful, consider supporting its development!
+If you find this project helpful, consider supporting its development! (UPI Supported):
 
-<a href="https://buymeacoffee.com/nivincnc" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+<a href="https://www.paywithchai.in/nivincnc" target="_blank"><img src="https://raw.githubusercontent.com/NivinCNC/streamflix/refs/heads/main/assets/1000156022-removebg-preview%7E2.png" alt="Pay With Chai" style="height: 60px !important;width: 217px !important;" ></a>
+
 
 Your support helps keep this project alive and enables continued maintanance of providers addition of new providers.
 
