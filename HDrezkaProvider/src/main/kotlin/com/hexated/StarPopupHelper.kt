@@ -20,8 +20,9 @@ import android.app.AlertDialog
 object StarPopupHelper {
     private const val TAG = "StarPopupHelper"
     private const val PREFS_NAME = "CNCVerseGlobalPrefs"
-    private const val KEY_SHOWN_STAR_POPUP = "shown_star_popup_global"
+    private const val KEY_SHOWN_STAR_POPUP = "shown_star_popup_global_pay"
     private const val GITHUB_REPO_URL = "https://github.com/NivinCNC/CNCVerse-Cloud-Stream-Extension"
+    private const val SPONSOR_URL = "https://www.paywithchai.in/nivincnc"
     
     fun showStarPopupIfNeeded(context: Context) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -90,15 +91,15 @@ object StarPopupHelper {
         }
         buttonContainer.addView(starButton)
         
-        val laterButton = Button(activity).apply {
-            text = "Maybe Later"
-            setTextColor(Color.parseColor("#888888"))
+        val sponsorButton = Button(activity).apply {
+            text = "❤️ Sponsor (UPI)"
+            setTextColor(Color.WHITE)
             textSize = 14f
             isAllCaps = false
-            background = createRoundedBackground(Color.parseColor("#2d2d44"))
+            background = createRoundedBackground(Color.parseColor("#6c5ce7"))
             setPadding(dp(20, activity), dp(12, activity), dp(20, activity), dp(12, activity))
         }
-        buttonContainer.addView(laterButton)
+        buttonContainer.addView(sponsorButton)
         
         layout.addView(buttonContainer)
         
@@ -119,7 +120,13 @@ object StarPopupHelper {
             dialog.dismiss()
         }
         
-        laterButton.setOnClickListener {
+        sponsorButton.setOnClickListener {
+            try {
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(SPONSOR_URL))
+                activity.startActivity(intent)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error opening Sponsor: ${e.message}")
+            }
             dialog.dismiss()
         }
         
