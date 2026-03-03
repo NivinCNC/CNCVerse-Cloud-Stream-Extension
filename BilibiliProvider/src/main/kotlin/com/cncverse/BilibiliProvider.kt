@@ -509,23 +509,9 @@ class BilibiliProvider : MainAPI() {
     
     private suspend fun tryPlayurlApi(epId: String?, aid: String?, callback: (ExtractorLink) -> Unit): Boolean {
         try {
-            // Exact same logic as the JavaScript downloader
-            // Check if it's an episode ID (4-8 digit numeric) or aid
-            val isEpisode = epId != null && epId.matches(Regex("^\\d{4,8}$"))
-            
-            // Build URL exactly like the downloader:
-            // For ep_id: ?ep_id=${valor}&device=wap&platform=web&qn=64&tf=0&type=0
-            // For aid: ?s_locale=en_US&platform=web&aid=${valor}&qn=120
-            val playurlUrl = when {
-                isEpisode -> "$PLAYURL_API?ep_id=$epId&device=wap&platform=web&qn=64&tf=0&type=0"
-                epId != null -> "$PLAYURL_API?ep_id=$epId&device=wap&platform=web&qn=64&tf=0&type=0"
-                aid != null -> "$PLAYURL_API?s_locale=en_US&platform=web&aid=$aid&qn=120"
-                else -> return false
-            }
-            
+            val playurlUrl = buildPlayurlApiUrl(epId, aid) ?: return false
             Log.d(TAG, "Playurl API (downloader format): $playurlUrl")
             
-            // Make request with minimal headers like the downloader
             val response = app.get(playurlUrl, headers = mapOf(
                 "User-Agent" to USER_AGENT,
                 "Referer" to "$mainUrl/"
@@ -535,227 +521,41 @@ class BilibiliProvider : MainAPI() {
             val json = parseJson<BiliPlayurlResponse>(response)
             
             if (json.code != 0) {
-                Log.d(TAG, "Playurl API error code: ${json.code}, message: ${json.message}")
-                
-                // Check for geo-restriction error (code 10015001 = "版权地区受限" / Copyright region restricted)
-                if (json.code == 10015001 || json.message?.contains("地区") == true || json.message?.contains("region") == true) {
-                    // Show geo-locked message to user
-                    callback.invoke(
-                        newExtractorLink(
-                            source = name,
-                            name = "⚠️ GEO-LOCKED - Content not available in your region",
-                            url = "https://bilibili.tv/geo-restricted",
-                            type = ExtractorLinkType.VIDEO
-                        ) {
-                            this.quality = Qualities.Unknown.value
-                        }
-                    )
-                    return true // Return true so user sees the message
-                }
-                
-                // Check for premium content error (code 10004004)
-                if (json.code == 10004004) {
-                    callback.invoke(
-                        newExtractorLink(
-                            source = name,
-                            name = "⚠️ PREMIUM CONTENT - Requires Bilibili TV subscription",
-                            url = "https://bilibili.tv/premium",
-                            type = ExtractorLinkType.VIDEO
-                        ) {
-                            this.quality = Qualities.Unknown.value
-                        }
-                    )
-                    return true // Return true so user sees the message
-                }
-                
-                return false
+                return handlePlayurlErrorCodes(json.code, json.message, callback)
             }
             
-            val playurl = json.data?.playurl
-            if (playurl == null) {
+            val playurl = json.data?.playurl ?: run {
                 Log.d(TAG, "Playurl data is null")
                 return false
             }
             
-            var urlVideo: String? = null
-            var urlAudio: String? = null
-            var foundVideoQuality = 0
-            
-            // Extract video URL - iterate through quality order like the downloader: 112, 80, 64, 32
-            // The downloader checks: if (calidadVideo === 112 && url !== '') break, etc.
-            val qualityOrder = listOf(112, 80, 64, 32)
-            
-            playurl.video?.let { videoList ->
-                Log.d(TAG, "Found ${videoList.size} video streams")
-                
-                // Iterate like the downloader - pick first available with non-empty URL
-                for (targetQuality in qualityOrder) {
-                    for (videoInfo in videoList) {
-                        val streamInfo = videoInfo.streamInfo
-                        val videoResource = videoInfo.videoResource
-                        val quality = streamInfo?.quality ?: 0
-                        val url = videoResource?.url?.trim() ?: ""
-                        
-                        Log.d(TAG, "Video stream: quality=$quality, url=${url.take(100)}")
-                        
-                        if (quality == targetQuality && url.isNotEmpty()) {
-                            urlVideo = url
-                            foundVideoQuality = quality
-                            Log.d(TAG, "Selected video quality $quality")
-                            break
-                        }
-                    }
-                    if (urlVideo != null) break
-                }
-                
-                // If no video found with target qualities, take any available
-                if (urlVideo == null) {
-                    for (videoInfo in videoList) {
-                        val videoResource = videoInfo.videoResource
-                        val url = videoResource?.url?.trim() ?: ""
-                        if (url.isNotEmpty()) {
-                            urlVideo = url
-                            foundVideoQuality = videoInfo.streamInfo?.quality ?: 0
-                            break
-                        }
-                    }
-                }
-            }
-            
-            // Extract audio - get first item from audio_resource like the downloader
-            // const audioInfo = audioInfoLista[0]; urlAudio = audioInfo.url;
-            playurl.audioResource?.let { audioList ->
-                Log.d(TAG, "Found ${audioList.size} audio streams")
-                
-                if (audioList.isNotEmpty()) {
-                    val audioInfo = audioList[0]
-                    urlAudio = audioInfo.url?.trim()
-                    Log.d(TAG, "Selected audio: ${urlAudio?.take(100)}")
-                }
-            }
+            val (urlVideo, foundVideoQuality) = extractBestVideoQuality(playurl.video)
+            val urlAudio = extractBestAudioUrl(playurl.audioResource)
             
             var foundVideo = false
             
-            // For DASH streams with separate video and audio, attach audio tracks to video
-            if (!urlVideo.isNullOrEmpty()) {
-                val qualityName = when (foundVideoQuality) {
-                    112 -> "1080P+"
-                    80 -> "1080P"
-                    64 -> "720P"
-                    32 -> "480P"
-                    16 -> "360P"
-                    else -> "${foundVideoQuality}p"
-                }
-                
-                val qualityValue = when (foundVideoQuality) {
-                    112 -> Qualities.P1080.value
-                    80 -> Qualities.P1080.value
-                    64 -> Qualities.P720.value
-                    32 -> Qualities.P480.value
-                    16 -> Qualities.P360.value
-                    else -> Qualities.Unknown.value
-                }
-                
-                val streamHeaders = mapOf(
+            if (urlVideo != null) {
+                val audioTracksList = buildAudioTracks(urlAudio, playurl.audioResource, mapOf(
                     "User-Agent" to USER_AGENT,
                     "Referer" to "$mainUrl/",
                     "Origin" to mainUrl
-                )
+                ))
                 
-                // Build audio tracks list
-                val audioTracksList = mutableListOf<AudioFile>()
-                if (!urlAudio.isNullOrEmpty()) {
-                    audioTracksList.add(
-                        newAudioFile(urlAudio!!) {
-                            this.headers = streamHeaders
-                        }
-                    )
-                }
-                
-                // Also add any additional audio tracks from audioResource
-                playurl.audioResource?.forEachIndexed { index, audioInfo ->
-                    val audioUrl = audioInfo.url?.trim() ?: ""
-                    if (audioUrl.isNotEmpty() && audioUrl != urlAudio) {
-                        audioTracksList.add(
-                            newAudioFile(audioUrl) {
-                                this.headers = streamHeaders
-                            }
-                        )
-                    }
-                }
-                
-                // Add main video stream with audio tracks
-                callback.invoke(
-                    newExtractorLink(
-                        source = name,
-                        name = "$name - $qualityName",
-                        url = urlVideo!!,
-                        type = INFER_TYPE
-                    ) {
-                        this.quality = qualityValue
-                        this.referer = mainUrl
-                        this.headers = streamHeaders
-                        this.audioTracks = audioTracksList
-                    }
-                )
+                invokeVideoCallback(urlVideo, foundVideoQuality, audioTracksList, false, callback)
                 foundVideo = true
-                Log.d(TAG, "Added video stream: $qualityName with ${audioTracksList.size} audio tracks, url: ${urlVideo?.take(100)}")
             }
             
-            // Also add other available qualities with audio tracks
             playurl.video?.forEach { videoInfo ->
-                val videoResource = videoInfo.videoResource
-                val streamInfo = videoInfo.streamInfo
-                val url = videoResource?.url?.trim() ?: ""
-                val quality = streamInfo?.quality ?: 0
+                val url = videoInfo.videoResource?.url?.trim() ?: ""
+                val quality = videoInfo.streamInfo?.quality ?: 0
                 
                 if (url.isNotEmpty() && url != urlVideo) {
-                    val qualityName = when (quality) {
-                        112 -> "1080P+"
-                        80 -> "1080P"
-                        64 -> "720P"
-                        32 -> "480P"
-                        16 -> "360P"
-                        else -> "${quality}p"
-                    }
-                    
-                    val qualityValue = when (quality) {
-                        112 -> Qualities.P1080.value
-                        80 -> Qualities.P1080.value
-                        64 -> Qualities.P720.value
-                        32 -> Qualities.P480.value
-                        16 -> Qualities.P360.value
-                        else -> Qualities.Unknown.value
-                    }
-                    
-                    val altStreamHeaders = mapOf(
+                    val altAudioTracks = buildAudioTracks(urlAudio, null, mapOf(
                         "User-Agent" to USER_AGENT,
                         "Referer" to "$mainUrl/"
-                    )
+                    ))
                     
-                    // Build audio tracks for alt streams too
-                    val altAudioTracks = mutableListOf<AudioFile>()
-                    if (!urlAudio.isNullOrEmpty()) {
-                        altAudioTracks.add(
-                            newAudioFile(urlAudio!!) {
-                                this.headers = altStreamHeaders
-                            }
-                        )
-                    }
-                    
-                    callback.invoke(
-                        newExtractorLink(
-                            source = name,
-                            name = "$name - $qualityName (Alt)",
-                            url = url,
-                            type = INFER_TYPE
-                        ) {
-                            this.quality = qualityValue
-                            this.referer = mainUrl
-                            this.headers = altStreamHeaders
-                            this.audioTracks = altAudioTracks
-                        }
-                    )
+                    invokeVideoCallback(url, quality, altAudioTracks, true, callback)
                 }
             }
             
@@ -763,6 +563,185 @@ class BilibiliProvider : MainAPI() {
         } catch (e: Exception) {
             Log.e(TAG, "Playurl API error: ${e.message}", e)
             return false
+        }
+    }
+
+    private fun buildPlayurlApiUrl(epId: String?, aid: String?): String? {
+        val isEpisode = epId != null && epId.matches(Regex("^\\d{4,8}$"))
+        return when {
+            isEpisode -> "$PLAYURL_API?ep_id=$epId&device=wap&platform=web&qn=64&tf=0&type=0"
+            epId != null -> "$PLAYURL_API?ep_id=$epId&device=wap&platform=web&qn=64&tf=0&type=0"
+            aid != null -> "$PLAYURL_API?s_locale=en_US&platform=web&aid=$aid&qn=120"
+            else -> null
+        }
+    }
+
+    private suspend fun handlePlayurlErrorCodes(code: Int?, message: String?, callback: (ExtractorLink) -> Unit): Boolean {
+        Log.d(TAG, "Playurl API error code: $code, message: $message")
+        
+        if (code == 10015001 || message?.contains("地区") == true || message?.contains("region") == true) {
+            callback.invoke(
+                newExtractorLink(
+                    source = name,
+                    name = "⚠️ GEO-LOCKED - Content not available in your region",
+                    url = "https://bilibili.tv/geo-restricted",
+                    type = ExtractorLinkType.VIDEO
+                ) {
+                    this.quality = Qualities.Unknown.value
+                }
+            )
+            return true
+        }
+        
+        if (code == 10004004) {
+            callback.invoke(
+                newExtractorLink(
+                    source = name,
+                    name = "⚠️ PREMIUM CONTENT - Requires Bilibili TV subscription",
+                    url = "https://bilibili.tv/premium",
+                    type = ExtractorLinkType.VIDEO
+                ) {
+                    this.quality = Qualities.Unknown.value
+                }
+            )
+            return true
+        }
+        
+        return false
+    }
+
+    private fun extractBestVideoQuality(videoList: List<BiliVideoStream>?): Pair<String?, Int> {
+        var urlVideo: String? = null
+        var foundVideoQuality = 0
+        
+        val qualityOrder = listOf(112, 80, 64, 32)
+        
+        if (videoList != null) {
+            Log.d(TAG, "Found ${videoList.size} video streams")
+            
+            for (targetQuality in qualityOrder) {
+                for (videoInfo in videoList) {
+                    val streamInfo = videoInfo.streamInfo
+                    val videoResource = videoInfo.videoResource
+                    val quality = streamInfo?.quality ?: 0
+                    val url = videoResource?.url?.trim() ?: ""
+                    
+                    if (quality == targetQuality && url.isNotEmpty()) {
+                        urlVideo = url
+                        foundVideoQuality = quality
+                        Log.d(TAG, "Selected video quality $quality")
+                        break
+                    }
+                }
+                if (urlVideo != null) break
+            }
+            
+            if (urlVideo == null) {
+                for (videoInfo in videoList) {
+                    val videoResource = videoInfo.videoResource
+                    val url = videoResource?.url?.trim() ?: ""
+                    if (url.isNotEmpty()) {
+                        urlVideo = url
+                        foundVideoQuality = videoInfo.streamInfo?.quality ?: 0
+                        break
+                    }
+                }
+            }
+        }
+        return Pair(urlVideo, foundVideoQuality)
+    }
+
+    private fun extractBestAudioUrl(audioList: List<BiliAudioResource>?): String? {
+        var urlAudio: String? = null
+        if (audioList != null) {
+            Log.d(TAG, "Found ${audioList.size} audio streams")
+            if (audioList.isNotEmpty()) {
+                val audioInfo = audioList[0]
+                urlAudio = audioInfo.url?.trim()
+                Log.d(TAG, "Selected audio: ${urlAudio?.take(100)}")
+            }
+        }
+        return urlAudio
+    }
+
+    private suspend fun buildAudioTracks(urlAudio: String?, audioResource: List<BiliAudioResource>?, headers: Map<String, String>): List<AudioFile> {
+        val audioTracksList = mutableListOf<AudioFile>()
+        
+        if (!urlAudio.isNullOrEmpty()) {
+            audioTracksList.add(
+                newAudioFile(urlAudio) {
+                    this.headers = headers
+                }
+            )
+        }
+        
+        audioResource?.forEach { audioInfo ->
+            val audioUrl = audioInfo.url?.trim() ?: ""
+            if (audioUrl.isNotEmpty() && audioUrl != urlAudio) {
+                audioTracksList.add(
+                    newAudioFile(audioUrl) {
+                        this.headers = headers
+                    }
+                )
+            }
+        }
+        
+        return audioTracksList
+    }
+
+    private suspend fun invokeVideoCallback(
+        urlVideo: String,
+        foundVideoQuality: Int,
+        audioTracksList: List<AudioFile>,
+        isAlt: Boolean,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val qualityName = when (foundVideoQuality) {
+            112 -> "1080P+"
+            80 -> "1080P"
+            64 -> "720P"
+            32 -> "480P"
+            16 -> "360P"
+            else -> "${foundVideoQuality}p"
+        } + if (isAlt) " (Alt)" else ""
+        
+        val qualityValue = when (foundVideoQuality) {
+            112, 80 -> Qualities.P1080.value
+            64 -> Qualities.P720.value
+            32 -> Qualities.P480.value
+            16 -> Qualities.P360.value
+            else -> Qualities.Unknown.value
+        }
+        
+        val streamHeaders = if (isAlt) {
+            mapOf(
+                "User-Agent" to USER_AGENT,
+                "Referer" to "$mainUrl/"
+            )
+        } else {
+            mapOf(
+                "User-Agent" to USER_AGENT,
+                "Referer" to "$mainUrl/",
+                "Origin" to mainUrl
+            )
+        }
+        
+        callback.invoke(
+            newExtractorLink(
+                source = name,
+                name = "$name - $qualityName",
+                url = urlVideo,
+                type = INFER_TYPE
+            ) {
+                this.quality = qualityValue
+                this.referer = mainUrl
+                this.headers = streamHeaders
+                this.audioTracks = audioTracksList
+            }
+        )
+        
+        if (!isAlt) {
+            Log.d(TAG, "Added video stream: $qualityName with ${audioTracksList.size} audio tracks, url: ${urlVideo.take(100)}")
         }
     }
     
