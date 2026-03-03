@@ -190,11 +190,8 @@ object ProviderManager {
                                         "catLink" to provider.catLink!!
                                     )
                                 } ?: fallbackProviders
-                        } else {
                         }
-                    } else {
                     }
-                } else {
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
