@@ -117,36 +117,12 @@ class BilibiliProvider : MainAPI() {
         try {
             when {
                 request.data == "foryou" -> {
-                    // Get diverse content using popular search terms
                     val popularTerms = listOf("full movie", "anime", "action", "comedy", "drama")
                     val term = popularTerms[page % popularTerms.size]
-                    
                     val searchUrl = "$WEB_API/search_v2?keyword=$term&platform=web&pn=$page&ps=30"
                     val response = app.get(searchUrl, headers = headers).text
-                    Log.d(TAG, "For you response: ${response.take(500)}")
-                    
                     val json = parseJson<BiliSearchResponse>(response)
-                    
-                    // Parse all modules - both OGV and UGC
-                    json.data?.modules?.forEach { module ->
-                        module.items?.forEach { item ->
-                            val title = item.title ?: return@forEach
-                            val seasonId = item.seasonId
-                            val aid = item.aid
-                            
-                            if (seasonId != null) {
-                                val href = "$mainUrl/en/play/$seasonId"
-                                home.add(newAnimeSearchResponse(title, href, TvType.Anime) {
-                                    this.posterUrl = item.cover?.ensureHttps()
-                                })
-                            } else if (aid != null) {
-                                val href = "$mainUrl/en/video/$aid"
-                                home.add(newMovieSearchResponse(title, href, TvType.Movie) {
-                                    this.posterUrl = item.cover?.ensureHttps()
-                                })
-                            }
-                        }
-                    }
+                    home.addAll(parseBiliSearchResponse(json))
                 }
                 request.data == "timeline" -> {
                     // Use timeline API for latest updates
@@ -170,56 +146,17 @@ class BilibiliProvider : MainAPI() {
                     }
                 }
                 request.data.startsWith("search:") -> {
-                    // Use search API for categories
                     val keyword = request.data.removePrefix("search:")
                     val searchUrl = "$WEB_API/search_v2?keyword=$keyword&platform=web&pn=$page&ps=30"
-                    
                     val response = app.get(searchUrl, headers = headers).text
-                    Log.d(TAG, "Search main page response: ${response.take(500)}")
-                    
                     val json = parseJson<BiliSearchResponse>(response)
-                    
-                    // Parse all modules - OGV contains anime/movies
-                    json.data?.modules?.forEach { module ->
-                        module.items?.forEach { item ->
-                            val title = item.title ?: return@forEach
-                            // For OGV, get season_id; for UGC, get aid
-                            val seasonId = item.seasonId
-                            val aid = item.aid
-                            
-                            if (seasonId != null) {
-                                val href = "$mainUrl/en/play/$seasonId"
-                                home.add(newAnimeSearchResponse(title, href, TvType.Anime) {
-                                    this.posterUrl = item.cover?.ensureHttps()
-                                })
-                            } else if (aid != null) {
-                                val href = "$mainUrl/en/video/$aid"
-                                home.add(newMovieSearchResponse(title, href, TvType.Movie) {
-                                    this.posterUrl = item.cover?.ensureHttps()
-                                })
-                            }
-                        }
-                    }
+                    home.addAll(parseBiliSearchResponse(json))
                 }
                 else -> {
-                    // Fallback to search
                     val searchUrl = "$WEB_API/search_v2?keyword=${request.data}&platform=web&pn=$page&ps=30"
                     val response = app.get(searchUrl, headers = headers).text
                     val json = parseJson<BiliSearchResponse>(response)
-                    
-                    json.data?.modules?.forEach { module ->
-                        module.items?.forEach { item ->
-                            val title = item.title ?: return@forEach
-                            val seasonId = item.seasonId
-                            
-                            if (seasonId != null) {
-                                val href = "$mainUrl/en/play/$seasonId"
-                                home.add(newAnimeSearchResponse(title, href, TvType.Anime) {
-                                    this.posterUrl = item.cover?.ensureHttps()
-                                })
-                            }
-                        }
-                    }
+                    home.addAll(parseBiliSearchResponse(json))
                 }
             }
         } catch (e: Exception) {
@@ -227,6 +164,30 @@ class BilibiliProvider : MainAPI() {
         }
 
         return newHomePageResponse(arrayListOf(HomePageList(request.name, home, isHorizontalImages = true)), hasNext = home.size >= 15)
+    }
+
+    private fun parseBiliSearchResponse(json: BiliSearchResponse): List<SearchResponse> {
+        val results = mutableListOf<SearchResponse>()
+        json.data?.modules?.forEach { module ->
+            module.items?.forEach { item ->
+                val title = item.title ?: return@forEach
+                val seasonId = item.seasonId
+                val aid = item.aid
+                
+                if (seasonId != null) {
+                    val href = "$mainUrl/en/play/$seasonId"
+                    results.add(newAnimeSearchResponse(title, href, TvType.Anime) {
+                        this.posterUrl = item.cover?.ensureHttps()
+                    })
+                } else if (aid != null) {
+                    val href = "$mainUrl/en/video/$aid"
+                    results.add(newMovieSearchResponse(title, href, TvType.Movie) {
+                        this.posterUrl = item.cover?.ensureHttps()
+                    })
+                }
+            }
+        }
+        return results
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
@@ -241,35 +202,7 @@ class BilibiliProvider : MainAPI() {
             Log.d(TAG, "Search response: ${response.take(500)}")
             
             val json = parseJson<BiliSearchResponse>(response)
-            
-            json.data?.modules?.forEach { module ->
-                when (module.type) {
-                    "ogv" -> {
-                        // Anime/Movies (licensed content)
-                        module.items?.forEach { item ->
-                            val title = item.title ?: return@forEach
-                            val seasonId = item.seasonId ?: return@forEach
-                            val href = "$mainUrl/en/play/$seasonId"
-                            
-                            results.add(newAnimeSearchResponse(title, href, TvType.Anime) {
-                                this.posterUrl = item.cover?.ensureHttps()
-                            })
-                        }
-                    }
-                    "ugc" -> {
-                        // User generated content (videos)
-                        module.items?.forEach { item ->
-                            val title = item.title ?: return@forEach
-                            val aid = item.aid ?: return@forEach
-                            val href = "$mainUrl/en/video/$aid"
-                            
-                            results.add(newMovieSearchResponse(title, href, TvType.Movie) {
-                                this.posterUrl = item.cover?.ensureHttps()
-                            })
-                        }
-                    }
-                }
-            }
+            results.addAll(parseBiliSearchResponse(json))
         } catch (e: Exception) {
             Log.e(TAG, "Search error: ${e.message}", e)
         }
@@ -321,33 +254,7 @@ class BilibiliProvider : MainAPI() {
             
             Log.d(TAG, "Episodes response: ${episodesResponse.take(1000)}")
             
-            val episodes = mutableListOf<Episode>()
-            var episodeCounter = 1
-            
-            episodesJson.data?.sections?.forEach { section ->
-                section.episodes?.forEach { ep ->
-                    val epId = ep.episodeId ?: return@forEach
-                    
-                    // Skip PV and promotional content
-                    if (ep.shortTitleDisplay?.contains("PV", ignoreCase = true) == true) {
-                        return@forEach
-                    }
-                    
-                    episodes.add(
-                        newEpisode(
-                            EpisodeData(
-                                epId = epId,
-                                seasonId = seasonId
-                            ).toJson()
-                        ) {
-                            this.name = ep.longTitleDisplay ?: ep.titleDisplay ?: ep.shortTitleDisplay ?: "Episode $episodeCounter"
-                            this.episode = ep.shortTitleDisplay?.replace(Regex("[^0-9]"), "")?.toIntOrNull() ?: episodeCounter
-                            this.posterUrl = ep.cover?.ensureHttps()
-                        }
-                    )
-                    episodeCounter++
-                }
-            }
+            val episodes = parseEpisodesFromResponse(episodesJson, seasonId)
             
             // Parse year from playerDate
             val year = season.playerDate?.substring(0, 4)?.toIntOrNull()
@@ -367,6 +274,25 @@ class BilibiliProvider : MainAPI() {
             Log.e(TAG, "Error loading season: ${e.message}", e)
             return null
         }
+    }
+
+    private fun parseEpisodesFromResponse(json: BiliEpisodesResponse, seasonId: String): List<Episode> {
+        val episodes = mutableListOf<Episode>()
+        var episodeCounter = 1
+        json.data?.sections?.forEach { section ->
+            section.episodes?.forEach { ep ->
+                val epId = ep.episodeId ?: return@forEach
+                if (ep.shortTitleDisplay?.contains("PV", ignoreCase = true) == true) return@forEach
+                
+                episodes.add(newEpisode(EpisodeData(epId = epId, seasonId = seasonId).toJson()) {
+                    this.name = ep.longTitleDisplay ?: ep.titleDisplay ?: ep.shortTitleDisplay ?: "Episode $episodeCounter"
+                    this.episode = ep.shortTitleDisplay?.replace(Regex("[^0-9]"), "")?.toIntOrNull() ?: episodeCounter
+                    this.posterUrl = ep.cover?.ensureHttps()
+                })
+                episodeCounter++
+            }
+        }
+        return episodes
     }
 
     private suspend fun loadVideo(url: String): LoadResponse? {
@@ -752,234 +678,32 @@ class BilibiliProvider : MainAPI() {
             
             var foundVideo = false
             
-            // Pattern 1: Look for __INITIAL_STATE__ or __INITIAL_DATA__ with better regex
-            val initialStatePatterns = listOf(
-                Regex("""window\.__INITIAL_STATE__\s*=\s*(\{[\s\S]*?\});\s*(?:\(function|window\.|</script)"""),
-                Regex("""window\.__INITIAL_DATA__\s*=\s*(\{[\s\S]*?\});\s*(?:</script|window\.)"""),
-                Regex("""<script[^>]*id="__NEXT_DATA__"[^>]*>(\{[\s\S]*?\})</script>"""),
-            )
+            // Pattern 1: Initial State
+            foundVideo = extractFromInitialState(pageContent, pageUrl, callback)
             
-            for (pattern in initialStatePatterns) {
-                val match = pattern.find(pageContent)
-                if (match != null) {
-                    try {
-                        val stateJson = match.groupValues[1]
-                        Log.d(TAG, "Found state data length: ${stateJson.length}, preview: ${stateJson.take(500)}")
-                        foundVideo = extractVideoUrlsFromJson(stateJson, pageUrl, callback)
-                        if (foundVideo) {
-                            Log.d(TAG, "Found video from state data")
-                            break
-                        }
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Error parsing state: ${e.message}")
-                    }
-                }
+            // Pattern 2: Script Tags
+            if (!foundVideo) {
+                foundVideo = extractFromScriptTags(pageContent, pageUrl, callback)
             }
             
-            // Pattern 2: Look for video URLs in script tags containing "playurl" or "video_resource"
+            // Pattern 3: SSR Data
             if (!foundVideo) {
-                val scriptRegex = Regex("""<script[^>]*>([\s\S]*?)</script>""")
-                scriptRegex.findAll(pageContent).forEach { scriptMatch ->
-                    val scriptContent = scriptMatch.groupValues[1]
-                    if (scriptContent.contains("playurl") || scriptContent.contains("video_resource") || 
-                        scriptContent.contains("baseUrl") || scriptContent.contains("base_url")) {
-                        Log.d(TAG, "Found potential video script, length: ${scriptContent.length}")
-                        if (extractVideoUrlsFromJson(scriptContent, pageUrl, callback)) {
-                            foundVideo = true
-                            return@forEach
-                        }
-                    }
-                }
+                foundVideo = extractFromSSRData(pageContent, pageUrl, callback)
             }
             
-            // Pattern 3: Look for playurlSSRData (used by bilibili.com bangumi)
+            // Pattern 4: Play Info
             if (!foundVideo) {
-                val playurlSSRDataRegex = Regex("""playurlSSRData\s*=\s*(\{[\s\S]+?\})\s*[\n;]""")
-                val playurlSSRDataMatch = playurlSSRDataRegex.find(pageContent)
-                
-                if (playurlSSRDataMatch != null) {
-                    try {
-                        val ssrJson = playurlSSRDataMatch.groupValues[1]
-                        Log.d(TAG, "Found playurlSSRData: ${ssrJson.take(500)}")
-                        foundVideo = extractVideoUrlsFromJson(ssrJson, pageUrl, callback)
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Error parsing playurlSSRData: ${e.message}")
-                    }
-                }
+                foundVideo = extractFromPlayInfo(pageContent, pageUrl, callback)
             }
             
-            // Pattern 4: Look for window.__playinfo__ 
+            // Pattern 5-7: Direct Patterns (M3U8, MP4, M4S)
             if (!foundVideo) {
-                val playInfoRegex = Regex("""window\.__playinfo__\s*=\s*(\{[\s\S]*?\});""")
-                val playInfoMatch = playInfoRegex.find(pageContent)
-                
-                if (playInfoMatch != null) {
-                    try {
-                        val playInfoJson = playInfoMatch.groupValues[1]
-                        Log.d(TAG, "Found playInfo: ${playInfoJson.take(500)}")
-                        
-                        val playInfo = parseJson<BiliPlayInfo>(playInfoJson)
-                        
-                        playInfo.data?.dash?.video?.forEach { video ->
-                            val videoUrl = video.baseUrl ?: video.base_url ?: return@forEach
-                            val quality = getQualityFromId(video.id ?: 0)
-                            
-                            callback.invoke(
-                                newExtractorLink(
-                                    source = name,
-                                    name = "$name - ${quality.name}",
-                                    url = videoUrl,
-                                    type = INFER_TYPE
-                                ) {
-                                    this.quality = quality.ordinal
-                                    this.referer = mainUrl
-                                    this.headers = mapOf(
-                                        "User-Agent" to USER_AGENT,
-                                        "Referer" to pageUrl
-                                    )
-                                }
-                            )
-                            foundVideo = true
-                        }
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Error parsing playInfo: ${e.message}", e)
-                    }
-                }
+                foundVideo = extractFromDirectPatterns(pageContent, pageUrl, callback)
             }
             
-            // Pattern 5: Look for m3u8 URLs directly in page content
+            // Pattern 8: CDN Patterns
             if (!foundVideo) {
-                val m3u8Regex = Regex("""(https?://[^"'\s<>\\]+\.m3u8[^"'\s<>\\]*)""")
-                m3u8Regex.findAll(pageContent).distinctBy { it.value }.take(5).forEach { match ->
-                    val videoUrl = match.value
-                        .replace("\\u002F", "/")
-                        .replace("\\/", "/")
-                    
-                    if (isValidVideoUrl(videoUrl)) {
-                        Log.d(TAG, "Found m3u8 URL: $videoUrl")
-                        callback.invoke(
-                            newExtractorLink(
-                                source = name,
-                                name = "$name - HLS",
-                                url = videoUrl,
-                                type = INFER_TYPE
-                            ) {
-                                this.quality = Qualities.Unknown.value
-                                this.referer = mainUrl
-                                this.headers = mapOf(
-                                    "User-Agent" to USER_AGENT,
-                                    "Referer" to pageUrl
-                                )
-                            }
-                        )
-                        foundVideo = true
-                    }
-                }
-            }
-            
-            // Pattern 6: Look for video/mp4 URLs with better patterns
-            if (!foundVideo) {
-                val mp4Patterns = listOf(
-                    Regex("""(https?://[^"'\s<>\\]+\.mp4[^"'\s<>\\]*)"""),
-                    Regex(""""url"\s*:\s*"(https?://[^"]+\.mp4[^"]*)""""),
-                    Regex("""src\s*[=:]\s*["'](https?://[^"']+\.mp4[^"']*)["']"""),
-                )
-                
-                for (pattern in mp4Patterns) {
-                    pattern.findAll(pageContent).distinctBy { it.groupValues.getOrNull(1) ?: it.value }.take(5).forEach { match ->
-                        val videoUrl = (match.groupValues.getOrNull(1) ?: match.value)
-                            .replace("\\u002F", "/")
-                            .replace("\\/", "/")
-                        
-                        if (isValidVideoUrl(videoUrl)) {
-                            Log.d(TAG, "Found MP4 URL: $videoUrl")
-                            callback.invoke(
-                                newExtractorLink(
-                                    source = name,
-                                    name = "$name - MP4",
-                                    url = videoUrl,
-                                    type = INFER_TYPE
-                                ) {
-                                    this.quality = Qualities.Unknown.value
-                                    this.referer = mainUrl
-                                    this.headers = mapOf(
-                                        "User-Agent" to USER_AGENT,
-                                        "Referer" to pageUrl
-                                    )
-                                }
-                            )
-                            foundVideo = true
-                        }
-                    }
-                    if (foundVideo) break
-                }
-            }
-            
-            // Pattern 7: Look for m4s segment URLs (DASH) - common for bilibili
-            if (!foundVideo) {
-                val m4sRegex = Regex("""(https?://[^"'\s<>\\]+\.m4s[^"'\s<>\\]*)""")
-                m4sRegex.findAll(pageContent).distinctBy { it.value }.take(5).forEach { match ->
-                    val videoUrl = match.value
-                        .replace("\\u002F", "/")
-                        .replace("\\/", "/")
-                    
-                    if (isValidVideoUrl(videoUrl)) {
-                        Log.d(TAG, "Found M4S URL: $videoUrl")
-                        callback.invoke(
-                            newExtractorLink(
-                                source = name,
-                                name = "$name - DASH Segment",
-                                url = videoUrl,
-                                type = INFER_TYPE
-                            ) {
-                                this.quality = Qualities.Unknown.value
-                                this.referer = mainUrl
-                                this.headers = mapOf(
-                                    "User-Agent" to USER_AGENT,
-                                    "Referer" to pageUrl
-                                )
-                            }
-                        )
-                        foundVideo = true
-                    }
-                }
-            }
-            
-            // Pattern 8: Look for any bilibili CDN URLs
-            if (!foundVideo) {
-                val cdnPatterns = listOf(
-                    Regex("""(https?://[^"'\s<>\\]*(?:upos-sz|bilivideo|bstar)[^"'\s<>\\]+)"""),
-                    Regex("""(https?://[^"'\s<>\\]*akamaized\.net[^"'\s<>\\]+)"""),
-                )
-                
-                for (pattern in cdnPatterns) {
-                    pattern.findAll(pageContent).distinctBy { it.value }.take(5).forEach { match ->
-                        val videoUrl = match.value
-                            .replace("\\u002F", "/")
-                            .replace("\\/", "/")
-                        
-                        if (videoUrl.length > 50) { // CDN URLs are typically long
-                            Log.d(TAG, "Found CDN URL: $videoUrl")
-                            callback.invoke(
-                                newExtractorLink(
-                                    source = name,
-                                    name = "$name - CDN Stream",
-                                    url = videoUrl,
-                                    type = INFER_TYPE
-                                ) {
-                                    this.quality = Qualities.Unknown.value
-                                    this.referer = mainUrl
-                                    this.headers = mapOf(
-                                        "User-Agent" to USER_AGENT,
-                                        "Referer" to pageUrl
-                                    )
-                                }
-                            )
-                            foundVideo = true
-                        }
-                    }
-                    if (foundVideo) break
-                }
+                foundVideo = extractFromCdnPatterns(pageContent, pageUrl, callback)
             }
             
             return foundVideo
@@ -987,6 +711,169 @@ class BilibiliProvider : MainAPI() {
             Log.e(TAG, "Error extracting from page: ${e.message}", e)
             return false
         }
+    }
+
+    private suspend fun extractFromInitialState(pageContent: String, pageUrl: String, callback: (ExtractorLink) -> Unit): Boolean {
+        val initialStatePatterns = listOf(
+            Regex("""window\.__INITIAL_STATE__\s*=\s*(\{[\s\S]*?\});\s*(?:\(function|window\.|</script)"""),
+            Regex("""window\.__INITIAL_DATA__\s*=\s*(\{[\s\S]*?\});\s*(?:</script|window\.)"""),
+            Regex("""<script[^>]*id="__NEXT_DATA__"[^>]*>(\{[\s\S]*?\})</script>"""),
+        )
+        
+        for (pattern in initialStatePatterns) {
+            val match = pattern.find(pageContent)
+            if (match != null) {
+                try {
+                    val stateJson = match.groupValues[1]
+                    Log.d(TAG, "Found state data length: ${stateJson.length}")
+                    if (extractVideoUrlsFromJson(stateJson, pageUrl, callback)) return true
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error parsing state: ${e.message}")
+                }
+            }
+        }
+        return false
+    }
+
+    private suspend fun extractFromScriptTags(pageContent: String, pageUrl: String, callback: (ExtractorLink) -> Unit): Boolean {
+        val scriptRegex = Regex("""<script[^>]*>([\s\S]*?)</script>""")
+        scriptRegex.findAll(pageContent).forEach { scriptMatch ->
+            val scriptContent = scriptMatch.groupValues[1]
+            if (scriptContent.contains("playurl") || scriptContent.contains("video_resource") || 
+                scriptContent.contains("baseUrl") || scriptContent.contains("base_url")) {
+                if (extractVideoUrlsFromJson(scriptContent, pageUrl, callback)) return true
+            }
+        }
+        return false
+    }
+
+    private suspend fun extractFromSSRData(pageContent: String, pageUrl: String, callback: (ExtractorLink) -> Unit): Boolean {
+        val playurlSSRDataRegex = Regex("""playurlSSRData\s*=\s*(\{[\s\S]+?\})\s*[\n;]""")
+        val playurlSSRDataMatch = playurlSSRDataRegex.find(pageContent)
+        
+        if (playurlSSRDataMatch != null) {
+            try {
+                val ssrJson = playurlSSRDataMatch.groupValues[1]
+                if (extractVideoUrlsFromJson(ssrJson, pageUrl, callback)) return true
+            } catch (e: Exception) {
+                Log.e(TAG, "Error parsing playurlSSRData: ${e.message}")
+            }
+        }
+        return false
+    }
+
+    private suspend fun extractFromPlayInfo(pageContent: String, pageUrl: String, callback: (ExtractorLink) -> Unit): Boolean {
+        val playInfoRegex = Regex("""window\.__playinfo__\s*=\s*(\{[\s\S]*?\});""")
+        val playInfoMatch = playInfoRegex.find(pageContent) ?: return false
+        
+        try {
+            val playInfoJson = playInfoMatch.groupValues[1]
+            val playInfo = parseJson<BiliPlayInfo>(playInfoJson)
+            var found = false
+            
+            playInfo.data?.dash?.video?.forEach { video ->
+                val videoUrl = video.baseUrl ?: video.base_url ?: return@forEach
+                val quality = getQualityFromId(video.id ?: 0)
+                
+                callback.invoke(
+                    newExtractorLink(
+                        source = name,
+                        name = "$name - ${quality.name}",
+                        url = videoUrl,
+                        type = INFER_TYPE
+                    ) {
+                        this.quality = quality.ordinal
+                        this.referer = mainUrl
+                        this.headers = mapOf(
+                            "User-Agent" to USER_AGENT,
+                            "Referer" to pageUrl
+                        )
+                    }
+                )
+                found = true
+            }
+            return found
+        } catch (e: Exception) {
+            Log.e(TAG, "Error parsing playInfo: ${e.message}")
+            return false
+        }
+    }
+
+    private suspend fun extractFromDirectPatterns(pageContent: String, pageUrl: String, callback: (ExtractorLink) -> Unit): Boolean {
+        var found = false
+        
+        // M3U8
+        val m3u8Regex = Regex("""(https?://[^"'\s<>\\]+\.m3u8[^"'\s<>\\]*)""")
+        m3u8Regex.findAll(pageContent).distinctBy { it.value }.take(5).forEach { match ->
+            val videoUrl = match.value.replace("\\u002F", "/").replace("\\/", "/")
+            if (isValidVideoUrl(videoUrl)) {
+                callback.invoke(newExtractorLink(name, "$name - HLS", videoUrl, INFER_TYPE) {
+                    this.quality = Qualities.Unknown.value
+                    this.referer = mainUrl
+                    this.headers = mapOf("User-Agent" to USER_AGENT, "Referer" to pageUrl)
+                })
+                found = true
+            }
+        }
+        if (found) return true
+
+        // MP4
+        val mp4Patterns = listOf(
+            Regex("""(https?://[^"'\s<>\\]+\.mp4[^"'\s<>\\]*)"""),
+            Regex(""""url"\s*:\s*"(https?://[^"]+\.mp4[^"]*)""""),
+            Regex("""src\s*[=:]\s*["'](https?://[^"']+\.mp4[^"']*)["']"""),
+        )
+        for (pattern in mp4Patterns) {
+            pattern.findAll(pageContent).distinctBy { it.groupValues.getOrNull(1) ?: it.value }.take(5).forEach { match ->
+                val videoUrl = (match.groupValues.getOrNull(1) ?: match.value).replace("\\u002F", "/").replace("\\/", "/")
+                if (isValidVideoUrl(videoUrl)) {
+                    callback.invoke(newExtractorLink(name, "$name - MP4", videoUrl, INFER_TYPE) {
+                        this.quality = Qualities.Unknown.value
+                        this.referer = mainUrl
+                        this.headers = mapOf("User-Agent" to USER_AGENT, "Referer" to pageUrl)
+                    })
+                    found = true
+                }
+            }
+        }
+        if (found) return true
+
+        // M4S
+        val m4sRegex = Regex("""(https?://[^"'\s<>\\]+\.m4s[^"'\s<>\\]*)""")
+        m4sRegex.findAll(pageContent).distinctBy { it.value }.take(5).forEach { match ->
+            val videoUrl = match.value.replace("\\u002F", "/").replace("\\/", "/")
+            if (isValidVideoUrl(videoUrl)) {
+                callback.invoke(newExtractorLink(name, "$name - DASH Segment", videoUrl, INFER_TYPE) {
+                    this.quality = Qualities.Unknown.value
+                    this.referer = mainUrl
+                    this.headers = mapOf("User-Agent" to USER_AGENT, "Referer" to pageUrl)
+                })
+                found = true
+            }
+        }
+        return found
+    }
+
+    private suspend fun extractFromCdnPatterns(pageContent: String, pageUrl: String, callback: (ExtractorLink) -> Unit): Boolean {
+        val cdnPatterns = listOf(
+            Regex("""(https?://[^"'\s<>\\]*(?:upos-sz|bilivideo|bstar)[^"'\s<>\\]+)"""),
+            Regex("""(https?://[^"'\s<>\\]*akamaized\.net[^"'\s<>\\]+)"""),
+        )
+        var found = false
+        for (pattern in cdnPatterns) {
+            pattern.findAll(pageContent).distinctBy { it.value }.take(5).forEach { match ->
+                val videoUrl = match.value.replace("\\u002F", "/").replace("\\/", "/")
+                if (videoUrl.length > 50) {
+                    callback.invoke(newExtractorLink(name, "$name - CDN Stream", videoUrl, INFER_TYPE) {
+                        this.quality = Qualities.Unknown.value
+                        this.referer = mainUrl
+                        this.headers = mapOf("User-Agent" to USER_AGENT, "Referer" to pageUrl)
+                    })
+                    found = true
+                }
+            }
+        }
+        return found
     }
     
     private fun isValidVideoUrl(url: String): Boolean {

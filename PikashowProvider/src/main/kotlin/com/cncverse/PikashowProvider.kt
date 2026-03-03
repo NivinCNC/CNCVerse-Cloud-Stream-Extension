@@ -14,10 +14,12 @@ import java.util.Base64
 import java.nio.charset.StandardCharsets
 import org.jsoup.Jsoup
 import okio.GzipSource
-import org.json.JSONArray
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import android.net.Uri
+import org.json.JSONObject
+import org.json.JSONArray
 
 class PikashowProvider : MainAPI() {
     override var mainUrl = "https://manoda.co"
@@ -680,130 +682,121 @@ class PikashowProvider : MainAPI() {
         callback: (ExtractorLink) -> Unit,
         contentName: String
     ) {
-        val baseHeaders = mutableMapOf(
-            "Referer" to "https://samui390dod.com/",
-            "Origin" to "https://samui390dod.com"
-        )
+        val finalHeaders = buildVideoHeaders(videoData)
         
-        // Add heastr and user agent from response if available
-        videoData.heastr?.let { baseHeaders["heastr"] = it }
-        videoData.uastr?.let { baseHeaders["user-agent"] = it }
-        videoData.uaStr?.let { baseHeaders["user-agent"] = it } // Also check uaStr variant
-        
-        // Parse headerStr if available (it's a JSON string of additional headers)
-        videoData.headerStr?.let { headerStr ->
-            try {
-                val additionalHeaders = mapper.readValue<Map<String, String>>(headerStr)
-                baseHeaders.putAll(additionalHeaders)
-            } catch (e: Exception) {
-                println("Failed to parse headerStr: ${e.message}")
-            }
-        }
-        
-        // Merge with response headers, giving priority to response headers
-        val finalHeaders = if (videoData.headers != null) {
-            val merged = baseHeaders.toMutableMap()
-            merged.putAll(videoData.headers)
-            // Ensure priority fields are still included even if response headers override
-            videoData.heastr?.let { merged["heastr"] = it }
-            videoData.uastr?.let { merged["user-agent"] = it }
-            videoData.uaStr?.let { merged["user-agent"] = it }
-            merged.toMutableMap()
-        } else {
-            baseHeaders.toMutableMap()
-        }
-        
-        // Check if we have any resolutions to work with
         val hasResolutions = !videoData.resolutions.isNullOrEmpty()
         val hasLanguageResolutions = videoData.languageOptions?.any { !it.resolutions.isNullOrEmpty() } == true ||
                                    videoData.languages?.any { !it.resolutions.isNullOrEmpty() } == true
         
         if (hasResolutions || hasLanguageResolutions) {
-            // Add resolutions from main data
             videoData.resolutions?.forEach { resolution ->
                 resolution.url?.let { url ->
-                    val linkType = when {
-                    url.contains("m3u8") || videoData.sourceType == "hls" -> ExtractorLinkType.M3U8
-                    videoData.sourceType == "direct" -> ExtractorLinkType.VIDEO
-                    else -> ExtractorLinkType.VIDEO
-                }
-                    callback.invoke(
-                        newExtractorLink(
-                            name,
-                            "${resolution.label ?: "Unknown"} - $contentName",
-                            url,
-                            linkType
-                        ) {
-                            this.referer = "https://samui390dod.com/"
-                            this.quality = getQualityValueFromLabel(resolution.label)
-                            this.headers = finalHeaders
-                        }
-                    )
+                    handleVideoLink(resolution.label, contentName, url, videoData, finalHeaders, null, callback)
                 }
             }
             
-            // Add language options if available
             (videoData.languageOptions ?: videoData.languages)?.forEach { lang ->
+                val langName = lang.language.takeIf { !it.isNullOrBlank() } ?: "Default"
                 lang.resolutions?.forEach { resolution ->
                     resolution.url?.let { url ->
-                        val linkType = when {
-                            url.contains("m3u8") || videoData.sourceType == "hls" -> ExtractorLinkType.M3U8
-                            videoData.sourceType == "direct" -> ExtractorLinkType.VIDEO
-                            else -> ExtractorLinkType.VIDEO
-                        }
-                        val langName = if (lang.language.isNullOrBlank()) "Default" else lang.language
-                        callback.invoke(
-                            newExtractorLink(
-                                name,
-                                "${resolution.label ?: "Unknown"} ($langName) - $contentName",
-                                url,
-                                type = linkType
-                            ) {
-                                this.referer = "https://samui390dod.com/"
-                                this.quality = getQualityValueFromLabel(resolution.label)
-                                this.headers = finalHeaders
-                            }
-                        )
+                        handleVideoLink(resolution.label, contentName, url, videoData, finalHeaders, langName, callback)
                     }
                 }
             }
         } else {
-            // Use URL-based HDBV player parsing when no resolutions are available
-            if (videoData.url != null) {
-                try {
-                    val streamingUrl = parseHDBVPlayerUrl(videoData.url)
-                    if (streamingUrl.isNotEmpty()) {
-                        val urlOrigin = videoData.url.substringBefore("/", "https://") + "://" + videoData.url.substringAfter("://").substringBefore("/") + "/"
-                        callback.invoke(
-                            newExtractorLink(
-                                name,
-                                "$contentName - HDBV",
-                                streamingUrl,
-                                type = ExtractorLinkType.M3U8
-                            ) {
-                                this.referer = urlOrigin
-                                this.quality = Qualities.P720.value
-                                this.headers = finalHeaders
-                            }
-                        )
-                    } else {
-                        // Fallback to direct URLs if HDBV parsing fails
-                        fallbackToDirectUrls(videoData, callback, contentName, finalHeaders)
-                    }
-                } catch (e: Exception) {
-                    println("Error parsing HDBV player URL: ${e.message}")
-                    // Fallback to direct URLs if HDBV parsing fails
-                    fallbackToDirectUrls(videoData, callback, contentName, finalHeaders)
-                }
-            } else {
-                // Direct URL fallback
-                fallbackToDirectUrls(videoData, callback, contentName, finalHeaders)
-            }
+            handleNoResolutionsFallback(videoData, contentName, finalHeaders, callback)
+        }
+    }
+
+    private fun buildVideoHeaders(videoData: VideoData): Map<String, String> {
+        val headers = mutableMapOf(
+            "Referer" to "https://samui390dod.com/",
+            "Origin" to "https://samui390dod.com"
+        )
+        
+        videoData.heastr?.let { headers["heastr"] = it }
+        videoData.uastr?.let { headers["user-agent"] = it }
+        videoData.uaStr?.let { headers["user-agent"] = it }
+        
+        videoData.headerStr?.let { headerStr ->
+            try {
+                headers.putAll(mapper.readValue<Map<String, String>>(headerStr))
+            } catch (e: Exception) { /* Ignore */ }
         }
         
-
+        videoData.headers?.let { headers.putAll(it) }
+        
+        // Re-apply priorities from videoData properties
+        videoData.heastr?.let { headers["heastr"] = it }
+        videoData.uastr?.let { headers["user-agent"] = it }
+        videoData.uaStr?.let { headers["user-agent"] = it }
+        
+        return headers
     }
-    
+
+    private suspend fun handleVideoLink(
+        label: String?,
+        contentName: String,
+        url: String,
+        videoData: VideoData,
+        headers: Map<String, String>,
+        langName: String?,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val type = when {
+            url.contains("m3u8") || videoData.sourceType == "hls" -> ExtractorLinkType.M3U8
+            else -> ExtractorLinkType.VIDEO
+        }
+        
+        val suffix = if (langName != null) " ($langName)" else ""
+        callback.invoke(
+            newExtractorLink(
+                name,
+                "${label ?: "Unknown"}$suffix - $contentName",
+                url,
+                type
+            ) {
+                this.referer = "https://samui390dod.com/"
+                this.quality = getQualityValueFromLabel(label)
+                this.headers = headers
+            }
+        )
+    }
+
+    private suspend fun handleNoResolutionsFallback(
+        videoData: VideoData,
+        contentName: String,
+        finalHeaders: Map<String, String>,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        if (videoData.url != null) {
+            try {
+                val streamingUrl = parseHDBVPlayerUrl(videoData.url)
+                if (streamingUrl.isNotEmpty()) {
+                    val urlOrigin = Uri.parse(videoData.url).let { "${it.scheme}://${it.host}/" }
+                    callback.invoke(
+                        newExtractorLink(
+                            name,
+                            "$contentName - HDBV",
+                            streamingUrl,
+                            type = ExtractorLinkType.M3U8
+                        ) {
+                            this.referer = urlOrigin
+                            this.quality = Qualities.P720.value
+                            this.headers = finalHeaders
+                        }
+                    )
+                } else {
+                    fallbackToDirectUrls(videoData, callback, contentName, finalHeaders)
+                }
+            } catch (e: Exception) {
+                fallbackToDirectUrls(videoData, callback, contentName, finalHeaders)
+            }
+        } else {
+            fallbackToDirectUrls(videoData, callback, contentName, finalHeaders)
+        }
+    }
+
     private suspend fun parseHDBVPlayerUrl(playerUrl: String): String {
         try {
             // Use the playerUrl directly as the HDBV player link
@@ -843,7 +836,7 @@ class PikashowProvider : MainAPI() {
 
             if (matchResult != null) {
                 val jsonInsideHDVBPlayer = matchResult.groupValues[1]
-                val fileKeys = mapper.readValue<Keys>(jsonInsideHDVBPlayer)
+                val fileKeys = mapper.readValue(jsonInsideHDVBPlayer, Keys::class.java)
 
                 // Extract origin from the playerUrl
                 val origin = playerUrl.substringBefore("/", "https://") + "://" + playerUrl.substringAfter("://").substringBefore("/") + "/"
@@ -880,7 +873,7 @@ class PikashowProvider : MainAPI() {
                     
                     for (i in 0 until jsonArray.length()) {
                         val jsonObject = jsonArray.getJSONObject(i).toString()
-                        val seasonData = mapper.readValue<Season>(jsonObject.replace("[]", ""))
+                        val seasonData = mapper.readValue(jsonObject.replace("[]", ""), Season::class.java)
                         seasons.add(seasonData)
                     }
 
