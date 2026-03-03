@@ -13,7 +13,7 @@ object SKLiveCryptoUtils {
     private val LEGACY_AES_KEY = hexStringToByteArray(BuildConfig.SKLIVE_KEY)
     private val LEGACY_AES_IV  = hexStringToByteArray(BuildConfig.SKLIVE_IV)
 
-    private val LOOKUP_TABLE_D = (
+    private val LOOKUP_TABLE_D =
         "\u0000\u0001\u0002\u0003\u0004\u0005\u0006\u0007\b\t\n\u000B\u000C\r\u000E\u000F" +
         "\u0010\u0011\u0012\u0013\u0014\u0015\u0016\u0017\u0018\u0019\u001A\u001B\u001C\u001D\u001E\u001F" +
         " !\"#\$%&'()*+,-./" +
@@ -22,7 +22,6 @@ object SKLiveCryptoUtils {
         "FPOZQSRWTXJ[\\]^_" +
         "`egmnkabuvcdyhli" +
         "fpozqsrwtxj{|}~\u007F"
-    )
 
     private fun hexStringToByteArray(hex: String): ByteArray {
         val len = hex.length

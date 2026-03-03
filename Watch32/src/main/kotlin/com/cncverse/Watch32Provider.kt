@@ -143,7 +143,7 @@ class Watch32Provider : MainAPI() {
             ?.substringBefore(" ")
             ?.trim()
 
-        val type = if (url.contains(("/movie/"))) TvType.Movie else TvType.TvSeries
+        val type = if (url.contains("/movie/")) TvType.Movie else TvType.TvSeries
 
         var movieUrlData = ""
         val episodes = mutableListOf<Episode>()

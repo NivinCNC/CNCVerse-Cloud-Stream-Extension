@@ -339,7 +339,7 @@ class XonProvider : MainAPI() {
 
         cachedShows.filter {
             it.name.contains(query, ignoreCase = true) ||
-            (it.des.contains(query, ignoreCase = true))
+            it.des.contains(query, ignoreCase = true)
         }.forEach { show ->
             val languageName = getLanguageName(show.language)
             searchResults.add(
@@ -374,7 +374,7 @@ class XonProvider : MainAPI() {
         // Search in movies
         cachedMovies.filter {
             it.name.contains(query, ignoreCase = true) ||
-            (it.des.contains(query, ignoreCase = true)) ||
+            it.des.contains(query, ignoreCase = true) ||
             it.tags.contains(query, ignoreCase = true)
         }.forEach { movie ->
             val languageName = getLanguageName(movie.language)

@@ -170,7 +170,7 @@ object ProviderManager {
                                     // Only include visible categories
                                     if (categoryData.visible != false) {
                                         mapOf(
-                                            "id" to (index + 1),
+                                            "id" to index + 1,
                                             "title" to categoryData.name,
                                             "image" to (categoryData.logo ?: ""),
                                             "catLink" to categoryData.api
