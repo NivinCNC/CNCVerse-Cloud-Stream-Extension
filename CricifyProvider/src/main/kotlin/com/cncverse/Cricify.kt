@@ -17,13 +17,13 @@ import okhttp3.Request
 import okhttp3.Response
 import java.io.InputStream
 import java.util.UUID
-import com.lagradost.cloudstream3.base64Encode
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.nio.charset.StandardCharsets
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
 import javax.crypto.spec.IvParameterSpec
+import org.json.JSONObject
 
 class HeaderReplacementInterceptor(private val customHeaders: Map<String, String>) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
@@ -52,12 +52,6 @@ class LoggingInterceptor : Interceptor {
     val buffer = okio.Buffer()
     bodyCopy?.writeTo(buffer)
     val bodyString = buffer.readUtf8()
-
-    println("URL: ${req.url}")
-    println("Method: ${req.method}")
-    println("Headers:\n${req.headers}")
-    println("Body:\n$bodyString")
-
     return chain.proceed(req)
   }
 }
@@ -103,6 +97,42 @@ class Cricify(
         }
     }
 
+private fun String.base64ToHexOrNull(): String? {
+    val raw = trim()
+    val normalizedHex = raw.replace("-", "")
+    if (normalizedHex.isNotEmpty() && normalizedHex.length % 2 == 0 && normalizedHex.matches(Regex("^[0-9a-fA-F]+$"))) {
+        return normalizedHex.lowercase()
+    }
+
+    return try {
+        val normalized = raw
+            .replace('-', '+')
+            .replace('_', '/')
+            .let { value ->
+                val padding = (4 - (value.length % 4)) % 4
+                value + "=".repeat(padding)
+            }
+        val decoded = Base64.decode(normalized, Base64.DEFAULT)
+        decoded.joinToString(separator = "") { byte -> "%02x".format(byte) }
+    } catch (_: Exception) {
+        null
+    }
+}
+
+private fun String.hexToBase64UrlOrNull(): String? {
+    val normalizedHex = trim().replace("-", "")
+    if (normalizedHex.isEmpty() || normalizedHex.length % 2 != 0 || !normalizedHex.matches(Regex("^[0-9a-fA-F]+$"))) {
+        return null
+    }
+
+    return try {
+        val bytes = normalizedHex.chunked(2).map { it.toInt(16).toByte() }.toByteArray()
+        Base64.encodeToString(bytes, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP)
+    } catch (_: Exception) {
+        null
+    }
+}
+
     private fun decryptContent(content: String): String {
         return try {
             // Check if content is already valid M3U
@@ -140,7 +170,6 @@ class Cricify(
 
             String(decrypted, StandardCharsets.UTF_8)
         } catch (e: Exception) {
-            println("Decryption failed: ${e.message}")
             content // Return original content if decryption fails
         }
     }
@@ -215,7 +244,7 @@ class Cricify(
                 val cookie = channel.cookie ?: ""
                 val licenseUrl = channel.licenseUrl ?: ""
                 val headers = channel.headers
-                newLiveSearchResponse(channelname, LoadData(streamurl, channelname, posterurl, nation, key, keyid, userAgent, cookie, licenseUrl, headers).toJson(), TvType.Live)
+                newLiveSearchResponse(channelname, LoadData(streamurl, channelname, posterurl, nation, key, keyid, userAgent, cookie, licenseUrl, channel.drmKeys, headers).toJson(), TvType.Live)
                 {
                     this.posterUrl=posterurl
                     this.apiName
@@ -244,7 +273,7 @@ class Cricify(
                 val userAgent = channel.userAgent ?: ""
                 val cookie = channel.cookie ?: ""
                 val licenseUrl = channel.licenseUrl ?: ""
-            newLiveSearchResponse(channelname, LoadData(streamurl, channelname, posterurl, nation, key, keyid, userAgent, cookie, licenseUrl, headers).toJson(), TvType.Live)
+            newLiveSearchResponse(channelname, LoadData(streamurl, channelname, posterurl, nation, key, keyid, userAgent, cookie, licenseUrl, channel.drmKeys, headers).toJson(), TvType.Live)
             {
                 this.posterUrl=posterurl
                 this.apiName
@@ -271,6 +300,7 @@ class Cricify(
         val userAgent: String,
         val cookie: String,
         val licenseUrl: String,
+        val drmKeys: Map<String, String> = emptyMap(),
         val headers: Map<String, String>,
     )
     override suspend fun loadLinks(
@@ -296,6 +326,34 @@ class Cricify(
             val hasLicenseUrl = loadData.licenseUrl.isNotEmpty() && loadData.licenseUrl.trim() != "null"
 
             if (hasValidKeys) {
+                var normalizedKey = loadData.key.base64ToHexOrNull() ?: loadData.key.trim()
+                var normalizedKid = loadData.keyid.base64ToHexOrNull() ?: loadData.keyid.trim()
+
+                if (loadData.drmKeys.isNotEmpty()) {
+                    val mpdStr = getMpdStream(
+                        url = loadData.url,
+                        customHeaders = headers
+                    )
+                    val regex = Regex("""cenc:default_KID=["']([0-9a-fA-F\-]{36})["']""")
+                    val mpdKidHex = regex.find(mpdStr)
+                        ?.groups
+                        ?.get(1)
+                        ?.value
+                        ?.replace("-", "")
+                        ?.lowercase()
+
+                    if (!mpdKidHex.isNullOrEmpty()) {
+                        val mappedKey = loadData.drmKeys[mpdKidHex]
+                        if (!mappedKey.isNullOrEmpty()) {
+                            normalizedKid = mpdKidHex
+                            normalizedKey = mappedKey
+                        }
+                    }
+                }
+
+                val playerKey = normalizedKey.hexToBase64UrlOrNull() ?: normalizedKey
+                val playerKid = normalizedKid.hexToBase64UrlOrNull() ?: normalizedKid
+
                 callback.invoke(
                     newDrmExtractorLink(
                         this.name,
@@ -309,12 +367,11 @@ class Cricify(
                         if (headers.isNotEmpty()) {
                             this.headers = headers
                         }
-                        this.key=loadData.key.trim()
-                        this.kid=loadData.keyid.trim()
+                        this.key=playerKey
+                        this.kid=playerKid
                     }
                 )
             } else if (hasLicenseUrl) {
-              println("Attempting to fetch DRM keys from License Server")
               // Get DRM KID from MPD Stream
               val mpdStr = getMpdStream(
                 url = loadData.url,
@@ -323,21 +380,18 @@ class Cricify(
               val regex = Regex("""cenc:default_KID=["']([0-9a-fA-F\-]{36})["']""")
               val matchResult = regex.find(mpdStr)
               val drmKid = matchResult?.groups?.get(1)?.value ?: UUID.randomUUID().toString()
-              println("Extracted DRM KID: $drmKid")
 
               // DRM KID is in Hex format with dashes, need to convert to Base64
               val drmKidBytes = drmKid.replace("-", "").chunked(2)
                 .map { it.toInt(16).toByte() }
                 .toByteArray()
               val drmKidBase64 = Base64.encodeToString(drmKidBytes, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP)
-              println("Converted DRM KID to Base64: $drmKidBase64")
 
               // Get DRM Key from License Server
               val keyBase64 = getDRMKeysFromLicenseServer(
                 url = loadData.licenseUrl,
                 kid = drmKidBase64
               )
-              println("Fetched DRM Key from License Server: $keyBase64")
               if (keyBase64.isNotEmpty()) {
                 callback.invoke(
                   newDrmExtractorLink(
@@ -485,10 +539,108 @@ data class PlaylistItem(
     val keyid: String? = null,
     val cookie: String? = null,
     val licenseUrl: String? = null,
+    val drmKeys: Map<String, String> = emptyMap(),
 )
 
 
 class IptvPlaylistParser {
+
+    private fun String.hexOrNull(): String? {
+        val normalizedHex = replace("-", "").trim()
+        if (normalizedHex.isBlank() || normalizedHex.length % 2 != 0) return null
+        return if (normalizedHex.matches(Regex("^[0-9a-fA-F]+$"))) {
+            normalizedHex.lowercase()
+        } else {
+            null
+        }
+    }
+
+    private fun String.base64ToHexOrNull(): String? {
+        val normalized = trim()
+            .replace('-', '+')
+            .replace('_', '/')
+            .let { value ->
+                val padding = (4 - (value.length % 4)) % 4
+                value + "=".repeat(padding)
+            }
+
+        return try {
+            val decoded = Base64.decode(normalized, Base64.DEFAULT)
+            decoded.joinToString(separator = "") { byte -> "%02x".format(byte) }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun String.normalizeDrmHexOrNull(): String? {
+        val trimmed = trim()
+        if (trimmed.isEmpty() || trimmed.equals("null", ignoreCase = true)) return null
+        return trimmed.hexOrNull() ?: trimmed.base64ToHexOrNull()
+    }
+
+    private fun parseLicenseKeysMap(licenseKey: String): Map<String, String> {
+        val trimmedKey = licenseKey.trim()
+        if (!trimmedKey.startsWith("{")) return emptyMap()
+
+        return try {
+            val json = JSONObject(trimmedKey)
+            val keys = json.optJSONArray("keys") ?: return emptyMap()
+            val parsed = mutableMapOf<String, String>()
+
+            for (index in 0 until keys.length()) {
+                val item = keys.optJSONObject(index) ?: continue
+                val kid = item.optString("kid").normalizeDrmHexOrNull()
+                val key = item.optString("k").normalizeDrmHexOrNull()
+
+                if (!kid.isNullOrEmpty() && !key.isNullOrEmpty()) {
+                    parsed[kid] = key
+                }
+            }
+
+            parsed
+        } catch (_: Exception) {
+            emptyMap()
+        }
+    }
+
+    private fun parseLicenseKeyPair(licenseKey: String): Pair<String?, String?>? {
+        val trimmedKey = licenseKey.trim()
+        if (trimmedKey.isEmpty()) return null
+
+        if (trimmedKey.startsWith("{")) {
+            return try {
+                val json = JSONObject(trimmedKey)
+                val keys = json.optJSONArray("keys") ?: return null
+
+                for (index in 0 until keys.length()) {
+                    val item = keys.optJSONObject(index) ?: continue
+                    val kid = item.optString("kid").normalizeDrmHexOrNull()
+                    val key = item.optString("k").normalizeDrmHexOrNull()
+
+                    if (kid != null || key != null) {
+                        return key to kid
+                    }
+                }
+
+                null
+            } catch (_: Exception) {
+                null
+            }
+        }
+
+        val parts = when {
+            trimmedKey.contains(":") -> trimmedKey.split(":", limit = 2)
+            trimmedKey.contains(",") -> trimmedKey.split(",", limit = 2)
+            else -> emptyList()
+        }
+
+        if (parts.size != 2) return null
+
+        val keyId = parts[0].trim().normalizeDrmHexOrNull()
+        val key = parts[1].trim().normalizeDrmHexOrNull()
+
+        return key to keyId
+    }
 
 
     /**
@@ -520,10 +672,10 @@ class IptvPlaylistParser {
         var bufferedKey: String? = null
         var bufferedKeyId: String? = null
         var bufferedLicenseUrl: String? = null
+        var bufferedDrmKeys: Map<String, String> = emptyMap()
         var bufferedTitle: String? = null
         var bufferedAttributes: Map<String, String> = emptyMap()
 
-        println("Parsing M3U with ${allLines.size} lines")
 
         while (i < allLines.size) {
             val line = allLines[i].trim()
@@ -531,10 +683,8 @@ class IptvPlaylistParser {
             if (line.isNotEmpty()) {
                 when {
                     line.startsWith(Cricify.EXT_INF) -> {
-                        println("Found EXTINF line: $line")
                         bufferedTitle = line.getTitle()
                         bufferedAttributes = line.getAttributes()
-                        println("Parsed title: $bufferedTitle, attributes: $bufferedAttributes")
 
                         // Extract DRM keys from attributes if present
                         val keyFromAttr = bufferedAttributes["key"] ?: bufferedAttributes["drm-key"]
@@ -562,68 +712,88 @@ class IptvPlaylistParser {
                     line.startsWith(Cricify.EXT_VLC_OPT) -> {
                         // Buffer user agent and referrer
                         val userAgent = line.getTagValue("http-user-agent")
-                        val referrer = line.getTagValue("http-referrer")
+                        val referrer = line.getTagValue("http-referrer") ?: line.getTagValue("http-referer")
 
                         if (userAgent != null) bufferedUserAgent = userAgent
                         if (referrer != null) {
-                            bufferedHeaders = bufferedHeaders + mapOf("referrer" to referrer)
+                            bufferedHeaders = bufferedHeaders + mapOf("Referer" to referrer)
                         }
                     }
                     line.startsWith("#KODIPROP:inputstream.adaptive.license_key=") -> {
                         // Parse keyid and key from license_key and buffer them
-                        println("Found KODIPROP license_key line: $line")
                         val licenseKey = line.removePrefix("#KODIPROP:inputstream.adaptive.license_key=").trim()
-                        println("Extracted license key: $licenseKey")
 
                         // Check if license key is a URL
                         if (licenseKey.startsWith("http://") || licenseKey.startsWith("https://")) {
-                            println("Using License URL: $licenseKey")
                             bufferedLicenseUrl = licenseKey
                         } else {
-                            // Handle different license key formats (hex encoded keys)
-                            val parts = when {
-                                licenseKey.contains(":") -> licenseKey.split(":")
-                                licenseKey.contains(",") -> licenseKey.split(",")
-                                else -> listOf(licenseKey)
+                            if (licenseKey.startsWith("{")) {
+                                // Updated JSON logic: preserve all KID->KEY pairs and use first as fallback.
+                                val parsedKeys = parseLicenseKeysMap(licenseKey)
+                                if (parsedKeys.isNotEmpty()) {
+                                    bufferedDrmKeys = parsedKeys
+                                    val firstPair = parsedKeys.entries.firstOrNull()
+                                    if (firstPair != null) {
+                                        if (bufferedKey == null) bufferedKey = firstPair.value
+                                        if (bufferedKeyId == null) bufferedKeyId = firstPair.key
+                                    }
+                                }
+
+                                val parsedKeyPair = parseLicenseKeyPair(licenseKey)
+                                if (parsedKeyPair != null) {
+                                    val (key, keyId) = parsedKeyPair
+                                    if (key != null) bufferedKey = key
+                                    if (keyId != null) bufferedKeyId = keyId
+                                }
+                            } else {
+                                // Legacy non-JSON logic: split keyid:key or keyid,key and decode hex -> base64url.
+                                val parts = when {
+                                    licenseKey.contains(":") -> licenseKey.split(":")
+                                    licenseKey.contains(",") -> licenseKey.split(",")
+                                    else -> listOf(licenseKey)
+                                }
+
+                                val drmKidBytes = parts.getOrNull(0)
+                                    ?.replace("-", "")
+                                    ?.chunked(2)
+                                    ?.mapNotNull {
+                                        try { it.toInt(16).toByte() }
+                                        catch (_: NumberFormatException) { null }
+                                    }?.toByteArray()
+
+                                val drmKeyBytes = parts.getOrNull(1)
+                                    ?.replace("-", "")
+                                    ?.chunked(2)
+                                    ?.mapNotNull {
+                                        try { it.toInt(16).toByte() }
+                                        catch (_: NumberFormatException) { null }
+                                    }?.toByteArray()
+
+                                val drmKidBase64 = if (drmKidBytes != null && drmKidBytes.isNotEmpty()) {
+                                    Base64.encodeToString(
+                                        drmKidBytes,
+                                        Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP
+                                    )
+                                } else {
+                                    null
+                                }
+
+                                val drmKeyBase64 = if (drmKeyBytes != null && drmKeyBytes.isNotEmpty()) {
+                                    Base64.encodeToString(
+                                        drmKeyBytes,
+                                        Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP
+                                    )
+                                } else {
+                                    null
+                                }
+
+                                if (drmKeyBase64 != null) bufferedKey = drmKeyBase64
+                                if (drmKidBase64 != null) bufferedKeyId = drmKidBase64
                             }
-
-                            val drmKidBytes = parts.getOrNull(0)
-                                ?.replace("-", "")
-                                ?.chunked(2)
-                                ?.mapNotNull {
-                                    try { it.toInt(16).toByte() }
-                                    catch (e: NumberFormatException) { null }
-                                }?.toByteArray()
-
-                            val drmKeyBytes = parts.getOrNull(1)
-                                ?.replace("-", "")
-                                ?.chunked(2)
-                                ?.mapNotNull {
-                                    try { it.toInt(16).toByte() }
-                                    catch (e: NumberFormatException) { null }
-                                }?.toByteArray()
-
-                            val drmKidBase64 = if (drmKidBytes != null && drmKidBytes.isNotEmpty())
-                                Base64.encodeToString(
-                                    drmKidBytes,
-                                    Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP
-                                ) else null
-
-                            val drmKeyBase64 = if (drmKeyBytes != null && drmKeyBytes.isNotEmpty())
-                                Base64.encodeToString(
-                                    drmKeyBytes,
-                                    Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP
-                                ) else null
-
-                            println("Decoded DRM keys - keyid: $drmKidBase64, key: $drmKeyBase64")
-                            if (drmKeyBase64 != null) bufferedKey = drmKeyBase64
-                            if (drmKidBase64 != null) bufferedKeyId = drmKidBase64
                         }
                     }
                     !line.startsWith("#") -> {
                         // URL line - now create the PlaylistItem with all buffered properties
-                        println("Found URL line: $line")
-
                         // Handle multi-line URLs by accumulating lines until we find a complete URL or hit a comment
                         var fullLine = line
                         var j = i + 1
@@ -636,7 +806,6 @@ class IptvPlaylistParser {
                             j++
                         }
 
-                        println("Full URL line: $fullLine")
 
                         // Update index to skip the lines we've already processed
                         i = j - 1
@@ -645,25 +814,21 @@ class IptvPlaylistParser {
                         val url = fullLine.getUrl()
                         val urlUserAgent = fullLine.getUrlParameter("user-agent")
                         val urlReferrer = fullLine.getUrlParameter("referer")
+                        val urlReferrerAlias = fullLine.getUrlParameter("referrer")
                         val urlCookie = fullLine.getUrlParameter("cookie")
                         val urlOrigin = fullLine.getUrlParameter("origin")
                         val urlKey = fullLine.getUrlParameter("key")
                         val urlKeyid = fullLine.getUrlParameter("keyid")
                         val urlLicenseUrl = fullLine.getUrlParameter("licenseUrl")
 
-                        println("Parsed URL: $url")
-                        println("Parsed UserAgent: $urlUserAgent")
-                        println("Parsed Cookie: $urlCookie")
-                        println("Parsed Referrer: $urlReferrer")
-                        println("Parsed Origin: $urlOrigin")
-
                         // Build final headers - URL params override buffered values
                         var finalHeaders = bufferedHeaders
-                        if (urlReferrer != null) {
-                            finalHeaders = finalHeaders + mapOf("referrer" to urlReferrer)
+                        val resolvedReferrer = urlReferrer ?: urlReferrerAlias
+                        if (resolvedReferrer != null) {
+                            finalHeaders = finalHeaders + mapOf("Referer" to resolvedReferrer)
                         }
                         if (urlOrigin != null) {
-                            finalHeaders = finalHeaders + mapOf("origin" to urlOrigin)
+                            finalHeaders = finalHeaders + mapOf("Origin" to urlOrigin)
                         }
 
                         // Create the PlaylistItem - URL params take priority over buffered values
@@ -676,11 +841,11 @@ class IptvPlaylistParser {
                             cookie = urlCookie ?: bufferedCookie,
                             key = urlKey ?: bufferedKey,
                             keyid = urlKeyid ?: bufferedKeyId,
-                            licenseUrl = urlLicenseUrl ?: bufferedLicenseUrl
+                            licenseUrl = urlLicenseUrl ?: bufferedLicenseUrl,
+                            drmKeys = bufferedDrmKeys
                         )
 
                         playlistItems.add(item)
-                        println("Created playlist item: ${item.title}, index: ${playlistItems.size - 1}")
 
                         // Reset all buffers for next item
                         bufferedCookie = null
@@ -689,6 +854,7 @@ class IptvPlaylistParser {
                         bufferedKey = null
                         bufferedKeyId = null
                         bufferedLicenseUrl = null
+                        bufferedDrmKeys = emptyMap()
                         bufferedTitle = null
                         bufferedAttributes = emptyMap()
                     }
@@ -696,7 +862,6 @@ class IptvPlaylistParser {
             }
             i++
         }
-        println("Parsing completed. Found ${playlistItems.size} playlist items")
         return Playlist(playlistItems)
     }
 
@@ -850,7 +1015,6 @@ class IptvPlaylistParser {
             afterExtInf.trim()
         }
 
-        println("Attributes string: '$attributesString'")
 
         val attributes = mutableMapOf<String, String>()
 
@@ -865,7 +1029,6 @@ class IptvPlaylistParser {
 
             if (key.isNotEmpty()) {
                 attributes[key] = value.trim()
-                println("Found attribute: $key = $value")
             }
         }
 
