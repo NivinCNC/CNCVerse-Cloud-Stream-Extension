@@ -273,6 +273,7 @@ class XonProvider : MainAPI() {
     }
 
     override val mainPage = mainPageOf(
+        "languages_top" to "Languages",
         "trending_shows" to "Trending Shows",
         "latest_episodes" to "Latest Episodes",
         "movies" to "Movies"
@@ -286,6 +287,54 @@ class XonProvider : MainAPI() {
         val homePageList = mutableListOf<HomePageList>()
 
         when (request.data) {
+            "languages_top" -> {
+                cachedLanguages.forEach { language ->
+                    val languageShows = cachedShows
+                        .filter { it.language == language.id }
+                        .map { show ->
+                            newTvSeriesSearchResponse(
+                                name = show.name,
+                                url = "show:${show.id}",
+                                type = TvType.TvSeries
+                            ) {
+                                this.posterUrl = formatPosterUrl(show.cover.ifEmpty { show.thumb })
+                            }
+                        }
+
+                    if (languageShows.isNotEmpty()) {
+                        homePageList.add(
+                            HomePageList(
+                                "${language.name} Shows",
+                                languageShows,
+                                isHorizontalImages = true
+                            )
+                        )
+                    }
+
+                    val languageMovies = cachedMovies
+                        .filter { it.language == language.id }
+                        .map { movie ->
+                            newMovieSearchResponse(
+                                name = movie.name,
+                                url = "movie:${movie.id}",
+                                type = TvType.Movie
+                            ) {
+                                this.posterUrl = formatPosterUrl(movie.cover.ifEmpty { movie.thumb })
+                            }
+                        }
+
+                    if (languageMovies.isNotEmpty()) {
+                        homePageList.add(
+                            HomePageList(
+                                "${language.name} Movies",
+                                languageMovies,
+                                isHorizontalImages = true
+                            )
+                        )
+                    }
+                }
+            }
+
             "trending_shows" -> {
                 val trendingShows = cachedShows.take(20).map { show ->
                     val languageName = getLanguageName(show.language)
