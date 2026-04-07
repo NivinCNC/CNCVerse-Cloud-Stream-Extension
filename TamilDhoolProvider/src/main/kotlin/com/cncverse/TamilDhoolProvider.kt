@@ -67,7 +67,7 @@ class TamilDhoolProvider : MainAPI() { // all providers must be an instance of M
     private fun Element.toSearchResult(): SearchResponse? {
         val title = this.selectFirst("section.entry-body > h3 > a")?.text()?.trim() ?: return null
         val href = fixUrl(this.selectFirst("section.entry-body > h3 > a")?.attr("href").toString())
-        val posterUrl = fixUrlNull(this.selectFirst("div.post-thumb > a > img")?.attr("src"))
+        val posterUrl = this.selectFirst("div.post-thumb > a > picture > img")?.attr("src")?: fixUrlNull(this.selectFirst("div.post-thumb > a > img")?.attr("src"))
         return newTvSeriesSearchResponse(title, href, TvType.TvSeries) {
             this.posterUrl = posterUrl
             this.posterHeaders = mapOf("referer" to "$mainUrl/")
