@@ -27,7 +27,6 @@ cloudstream {
 
     iconUrl = "https://images.dwncdn.net/images/t_app-icon-l/p/b0c9663c-0d61-4941-b12f-91c58c06189f/1137087733/hdo-box-logo"
 
-    isCrossPlatform = false
 
 }
 

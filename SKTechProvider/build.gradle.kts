@@ -33,5 +33,4 @@ cloudstream {
 
     iconUrl = "https://appteka.store/get/a20p17EuCKFD08AaFsfH3JSJ6OU30ccp18WrKaNDze4LqOsDArhKj13-f-SjAayiWJH6P6pv9AlzhcfzEXlmRokU-I4=/726bbb91e36da425f55efce72cccb3a82df1d265.png"
 
-    isCrossPlatform = true
 }

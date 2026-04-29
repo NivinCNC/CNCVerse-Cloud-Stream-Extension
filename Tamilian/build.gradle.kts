@@ -26,7 +26,6 @@ cloudstream {
 
     iconUrl = "https://www.google.com/s2/favicons?domain=tamilian.io&sz=%size%"
 
-    isCrossPlatform = false
 
 }
 

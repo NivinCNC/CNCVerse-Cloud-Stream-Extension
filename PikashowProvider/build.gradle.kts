@@ -34,5 +34,4 @@ cloudstream {
 
     iconUrl = "https://raw.githubusercontent.com/NivinCNC/CNCVerse-Cloud-Stream-Extension/refs/heads/master/PikashowProvider/logo.png"
 
-    isCrossPlatform = true
 }

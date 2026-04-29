@@ -33,5 +33,4 @@ cloudstream {
 
     iconUrl = "https://cricfy.pro/wp-content/uploads/2024/11/cropped-cricfytv-2.png"
 
-    isCrossPlatform = true
 }
