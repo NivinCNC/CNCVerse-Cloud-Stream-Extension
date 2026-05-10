@@ -2,20 +2,11 @@ package com.horis.cncverse
 
 import android.content.Context
 import com.horis.cncverse.entities.EpisodesData
-import com.horis.cncverse.entities.PlayList
 import com.horis.cncverse.entities.PostData
-import com.horis.cncverse.entities.SearchData
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
-import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import com.lagradost.cloudstream3.utils.ExtractorLink
-import com.lagradost.cloudstream3.utils.Qualities
-import com.lagradost.cloudstream3.utils.httpsify
-import com.lagradost.cloudstream3.utils.getQualityFromName
-import okhttp3.Headers
-import okhttp3.Interceptor
-import okhttp3.Response
 import org.jsoup.nodes.Element
 import com.lagradost.cloudstream3.APIHolder.unixTime
 
@@ -224,29 +215,20 @@ open class DisneyStudioProvider(
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ): Boolean {
-        val (title, id) = parseJson<LoadData>(data)
-        val playlist = app.get(
-            "$mainUrl/mobile/hs/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}",
-            headers,
-            referer = "$mainUrl/home",
-            cookies = buildCookies()
-        ).parsed<PlayList>()
+        val apiBase = resolveApiUrl()
+        val id = parseJson<LoadData>(data).id
+        val response = app.get(
+            "$apiBase/newtv/player.php?id=$id",
+            headers = buildNewTvHeaders("hs", mapOf("Usertoken" to ""))
+        ).parsed<NewTvPlayerResponse>()
 
-        playlist.forEach { item ->
-            item.sources.forEach {
-                callback.invoke(
-                    newExtractorLink(
-                        name,
-                        it.label,
-                        "$mainUrl/${it.file}",
-                        type = ExtractorLinkType.M3U8
-                    ) {
-                        this.referer = "$mainUrl/home"
-                        this.quality = getQualityFromName(it.file.substringAfter("q=", ""))
-                    }
-                )
+        if (response.status != "ok" || response.video_link.isNullOrBlank()) return false
+
+        callback.invoke(
+            newExtractorLink(name, name, response.video_link, type = ExtractorLinkType.M3U8) {
+                this.referer = response.referer ?: apiBase
             }
-        }
+        )
 
         return true
     }
@@ -266,3 +248,4 @@ data class LoadData(
     val title: String,
     val id: String
 )
+

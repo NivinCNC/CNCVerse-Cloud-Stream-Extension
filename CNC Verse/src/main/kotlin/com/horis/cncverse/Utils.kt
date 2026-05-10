@@ -17,6 +17,7 @@ import com.lagradost.api.Log
 import org.json.JSONObject
 import java.util.UUID
 import okhttp3.Request
+import java.util.Base64
 
 val JSONParser = object : ResponseParser {
     val mapper: ObjectMapper = jacksonObjectMapper().configure(
@@ -144,3 +145,83 @@ suspend fun bypass(mainUrl: String): String {
     }
     return newCookie
 }
+
+val newTvBaseHeaders = mapOf(
+    "Cache-Control" to "no-cache, no-store, must-revalidate",
+    "Pragma" to "no-cache",
+    "Expires" to "0",
+    "X-Requested-With" to "NetmirrorNewTV v1.0",
+    "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:136.0) Gecko/20100101 Firefox/136.0 /OS.GatuNewTV v1.0",
+    "Accept" to "application/json, text/plain, */*"
+)
+
+val newTvDomains = listOf(
+    "aHR0cHM6Ly9tb2JpbGVkZXRlY3RzLmNvbQ==",
+    "aHR0cHM6Ly9tb2JpbGVkZXRlY3QuYXBw",
+    "aHR0cHM6Ly9tb2JpZGV0ZWN0LmFydA==",
+    "aHR0cHM6Ly9tb2JpZGV0ZWN0LmNj",
+    "aHR0cHM6Ly9tb2JpZGV0ZWN0LmNsaWNr",
+    "aHR0cHM6Ly9tb2JpZGV0ZWN0Lmluaw==",
+    "aHR0cHM6Ly9tb2JpZGV0ZWN0LmxpdmU=",
+    "aHR0cHM6Ly9tb2JpZGV0ZWN0LnBybw==",
+    "aHR0cHM6Ly9tb2JpZGV0ZWN0LnNob3A=",
+    "aHR0cHM6Ly9tb2JpZGV0ZWN0LnNpdGU=",
+    "aHR0cHM6Ly9tb2JpZGV0ZWN0LnNwYWNl",
+    "aHR0cHM6Ly9tb2JpZGV0ZWN0LnN0b3Jl",
+    "aHR0cHM6Ly9tb2JpZGV0ZWN0LnZpcA==",
+    "aHR0cHM6Ly9tb2JpZGV0ZWN0Lndpa2k=",
+    "aHR0cHM6Ly9tb2JpZGV0ZWN0Lnh5eg==",
+    "aHR0cHM6Ly9tb2JpZGV0ZWN0cy5hcnQ=",
+    "aHR0cHM6Ly9tb2JpZGV0ZWN0cy5jYw==",
+    "aHR0cHM6Ly9tb2JpZGV0ZWN0cy5pbmZv",
+    "aHR0cHM6Ly9tb2JpZGV0ZWN0cy5pbms=",
+    "aHR0cHM6Ly9tb2JpZGV0ZWN0cy5saXZl",
+    "aHR0cHM6Ly9tb2JpZGV0ZWN0cy5wcm8=",
+    "aHR0cHM6Ly9tb2JpZGV0ZWN0cy5zdG9yZQ==",
+    "aHR0cHM6Ly9tb2JpZGV0ZWN0cy50b3A=",
+    "aHR0cHM6Ly9tb2JpZGV0ZWN0cy54eXo="
+)
+
+fun decodeBase64(value: String): String {
+    return String(Base64.getDecoder().decode(value))
+}
+
+private var resolvedApiUrl: String = ""
+
+suspend fun resolveApiUrl(): String {
+    if (resolvedApiUrl.isNotBlank()) return resolvedApiUrl
+    for (encoded in newTvDomains) {
+        val base = decodeBase64(encoded).trimEnd('/')
+        try {
+            val response = app.get("$base/checknewtv.php", headers = newTvBaseHeaders)
+                .parsed<NewTvTokenResponse>()
+            val tokenHash = response.token_hash
+            if (!tokenHash.isNullOrBlank()) {
+                resolvedApiUrl = decodeBase64(tokenHash).trimEnd('/')
+                return resolvedApiUrl
+            }
+        } catch (_: Exception) {
+            // Try next domain.
+        }
+    }
+    throw Exception("Failed to resolve NewTV API base URL")
+}
+
+fun buildNewTvHeaders(ott: String, extra: Map<String, String> = emptyMap()): Map<String, String> {
+    val result = newTvBaseHeaders.toMutableMap()
+    result["Ott"] = ott
+    extra.forEach { (key, value) ->
+        result[key] = value
+    }
+    return result
+}
+
+data class NewTvTokenResponse(
+    val token_hash: String? = null
+)
+
+data class NewTvPlayerResponse(
+    val status: String? = null,
+    val video_link: String? = null,
+    val referer: String? = null
+)
