@@ -14,7 +14,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 class EinthusanProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://cors.cncverse.workers.dev/https://einthusan.tv"
+    override var mainUrl = "https://cors.cricify.workers.dev/https://einthusan.tv"
     override var name = "Einthusan"
     override val hasMainPage = true
     override var lang = "ta"

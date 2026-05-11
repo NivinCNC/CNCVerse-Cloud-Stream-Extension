@@ -14,7 +14,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 class TamilUltraProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://cors.cncverse.workers.dev/https://tamilultra.icu"
+    override var mainUrl = "https://cors.cricify.workers.dev/https://tamilultra.icu"
     override var name = "TamilUltra"
     override val hasMainPage = true
     override var lang = "ta"
@@ -64,7 +64,7 @@ class TamilUltraProvider : MainAPI() { // all providers must be an instance of M
     private fun Element.toSearchResult(): SearchResponse? {
         val title = this.selectFirst("div.data > h3 > a")?.text()?.trim()
             ?: return null
-        val href = "https://cors.cncverse.workers.dev/" + fixUrl(this.selectFirst("div.data > h3 > a")?.attr("href").toString())
+        val href = "https://cors.cricify.workers.dev/" + fixUrl(this.selectFirst("div.data > h3 > a")?.attr("href").toString())
         val posterUrl = fixUrlNull(this.selectFirst("div.poster > img")?.attr("src"))
         return newMovieSearchResponse(title, href, TvType.Live) {
                 this.posterUrl = posterUrl
@@ -84,7 +84,7 @@ class TamilUltraProvider : MainAPI() { // all providers must be an instance of M
             val finalUrl = if (href.startsWith("/")) {
                 mainUrl + href
             } else {
-                "https://cors.cncverse.workers.dev/" + href
+                "https://cors.cricify.workers.dev/" + href
             }
             val posterUrl = fixUrlNull(
                 it.selectFirst("article > div.image > div.thumbnail > a > img")?.attr("src")
