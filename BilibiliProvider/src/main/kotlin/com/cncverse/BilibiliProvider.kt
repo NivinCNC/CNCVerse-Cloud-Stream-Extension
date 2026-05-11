@@ -1162,8 +1162,8 @@ class BilibiliProvider : MainAPI() {
         val encodedAudioUrl = URLEncoder.encode(audioUrl, "UTF-8")
         
         // Generate MPD via our CORS proxy's MPD generator endpoint
-        // Format: https://cors.cricify.workers.dev/mpd?video=URL&audio=URL&quality=QN
-        return "https://cors.cricify.workers.dev/mpd?video=$encodedVideoUrl&audio=$encodedAudioUrl&quality=$quality"
+        // Format: mpd?video=URL&audio=URL&quality=QN
+        return "https://www.bilibili.tv/mpd?video=$encodedVideoUrl&audio=$encodedAudioUrl&quality=$quality"
     }
     
     private fun getQualityFromResolution(height: Int): Qualities {
