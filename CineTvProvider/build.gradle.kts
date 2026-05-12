@@ -1,5 +1,5 @@
 // use an integer for version numbers
-version = 3
+version = 4
 
 android {
     buildFeatures {
@@ -11,7 +11,7 @@ cloudstream {
     language = "ta"
     // All of these properties are optional, you can safely remove them
 
-    description = "Clone of Memesapp , FilmTV etc"
+    description = "Clone of Cinema, Memesapp , FilmTV etc"
     authors = listOf("CNCVerse")
 
     /**

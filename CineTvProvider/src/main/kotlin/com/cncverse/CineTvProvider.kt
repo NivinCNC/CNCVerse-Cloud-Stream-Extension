@@ -34,7 +34,7 @@ class CineTvProvider : MainAPI() {
         private val WS_SECRET = BuildConfig.CINETV_WS_SECRET
     }
     
-    override var mainUrl = "https://i6a6.t9z0.com"
+    override var mainUrl = "https://moviein.ajfysu.com"
     override var name = "CineTv"
     override val hasMainPage = true
     override var lang = "ta"
@@ -244,23 +244,23 @@ class CineTvProvider : MainAPI() {
         
         val headers = mapOf(
             "androidid" to deviceId,
-            "app_id" to "cinetvin",
+            "app_id" to "moviein",
             "app_language" to "en",
-            "channel_code" to "cinetvin_3001",
+            "channel_code" to "moviein_1001",
             "Connection" to "Keep-Alive",
             "Content-Type" to "application/x-www-form-urlencoded",
             "cur_time" to curTime,
             "device_id" to deviceId,
             "en_al" to "0",
             "gaid" to gaid,
-            "Host" to "i6a6.t9z0.com",
+            "Host" to "moviein.ajfysu.com",
             "is_display" to "GMT+05:30",
             "is_language" to "en",
             "is_vvv" to "0",
             "log-header" to "I am the log request header.",
             "mob_mfr" to "google",
             "mobmodel" to "Pixel 5",
-            "package_name" to "com.cti.cinetvin",
+            "package_name" to "com.fvvcl.flickverse",
             "sign" to generateSign(curTime),
             "sys_platform" to "2",
             "sysrelease" to "13",
@@ -317,23 +317,23 @@ class CineTvProvider : MainAPI() {
         return mapOf(
             "Accept-Encoding" to "identity",
             "androidid" to deviceId,
-            "app_id" to "cinetvin",
+            "app_id" to "moviein",
             "app_language" to "en",
-            "channel_code" to "cinetvin_3001",
+            "channel_code" to "moviein_1001",
             "Connection" to "Keep-Alive",
             "Content-Type" to "application/x-www-form-urlencoded",
             "cur_time" to timestamp,
             "device_id" to deviceId,
             "en_al" to "0",
             "gaid" to gaid,
-            "Host" to "i6a6.t9z0.com",
+            "Host" to "moviein.ajfysu.com",
             "is_display" to "GMT+05:30",
             "is_language" to "en",
             "is_vvv" to "0",
             "log-header" to "I am the log request header.",
             "mob_mfr" to "google",
             "mobmodel" to "Pixel 5",
-            "package_name" to "com.cti.cinetvin",
+            "package_name" to "com.fvvcl.flickverse",
             "sign" to generateSign(timestamp),
             "sys_platform" to "2",
             "sysrelease" to "13",
