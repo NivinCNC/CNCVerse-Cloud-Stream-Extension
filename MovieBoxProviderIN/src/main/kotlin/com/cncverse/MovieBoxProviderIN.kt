@@ -200,6 +200,7 @@ class MovieBoxProviderIN : MainAPI() {
             }
             return newMovieSearchResponse(title, subjectId, subjectType) {
                 this.posterUrl = coverUrl
+                this.score = Score.from10(subjectJson["imdbRatingValue"]?.asText())
             }
         }
 
