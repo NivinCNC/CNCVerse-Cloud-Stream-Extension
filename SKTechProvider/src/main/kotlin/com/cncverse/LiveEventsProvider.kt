@@ -472,6 +472,10 @@ class LiveEventsProvider : MainAPI() {
                     }
                     else -> {
                         // M3U8 or other types
+                        val finalHeaders = headers.toMutableMap()
+                        if (!finalHeaders.containsKey("User-Agent")) {
+                            finalHeaders["User-Agent"] = "Mozilla/5.0 (Linux; Android 10; Pixel 3 XL) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Mobile Safari/537.36"
+                        }
                         callback.invoke(
                                 newExtractorLink(
                                         source = this.name,
@@ -480,8 +484,8 @@ class LiveEventsProvider : MainAPI() {
                                         type = ExtractorLinkType.M3U8
                                 ) {
                                     this.quality = Qualities.Unknown.value
-                                    if (headers.isNotEmpty()) {
-                                        this.headers = headers
+                                    if (finalHeaders.isNotEmpty()) {
+                                        this.headers = finalHeaders
                                     }
                                 }
                         )
