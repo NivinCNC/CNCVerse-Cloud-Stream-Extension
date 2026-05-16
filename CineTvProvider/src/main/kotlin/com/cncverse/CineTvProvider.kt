@@ -16,6 +16,7 @@ import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 import android.util.Base64
 import java.net.URI
+import java.security.SecureRandom
 
 class CineTvProvider : MainAPI() {
     companion object {
@@ -34,7 +35,7 @@ class CineTvProvider : MainAPI() {
         private val WS_SECRET = BuildConfig.CINETV_WS_SECRET
     }
     
-    override var mainUrl = "https://moviein.ajfysu.com"
+    override var mainUrl = "https://filmin.ajfysu.com"
     override var name = "CineTv"
     override val hasMainPage = true
     override var lang = "ta"
@@ -43,7 +44,34 @@ class CineTvProvider : MainAPI() {
         TvType.TvSeries,
     )
     
-    private val deviceId = "2987149b2e2a63b2"
+    private val random = SecureRandom()
+
+    private fun generateDeviceId(): String {
+        val bytes = ByteArray(16)
+        random.nextBytes(bytes)
+        return bytes.joinToString("") { "%02x".format(it) }
+    }
+
+    data class BrandModel(val brand: String, val model: String)
+
+    private val brandModels = mapOf(
+        "Samsung" to listOf("SM-S918B", "SM-A528B", "SM-M336B"),
+        "Xiaomi" to listOf("2201117TI", "M2012K11AI", "Redmi Note 11"),
+        "OnePlus" to listOf("LE2111", "CPH2449", "IN2023"),
+        "Google" to listOf("Pixel 6", "Pixel 7", "Pixel 8"),
+        "Realme" to listOf("RMX3085", "RMX3360", "RMX3551")
+    )
+
+    private fun randomBrandModel(): BrandModel {
+        val brand = brandModels.keys.random()
+        val model = brandModels[brand]!!.random()
+        return BrandModel(brand, model)
+    }
+
+    private val deviceId = generateDeviceId()
+    private val brandModel = randomBrandModel()
+    private val mobMfr = brandModel.brand
+    private val mobModel = brandModel.model
     private val gaid = ""
     private var token: String? = null
     private val mapper = jacksonObjectMapper()
@@ -244,23 +272,23 @@ class CineTvProvider : MainAPI() {
         
         val headers = mapOf(
             "androidid" to deviceId,
-            "app_id" to "moviein",
+            "app_id" to "filmin",
             "app_language" to "en",
-            "channel_code" to "moviein_1001",
+            "channel_code" to "filmin_1001",
             "Connection" to "Keep-Alive",
             "Content-Type" to "application/x-www-form-urlencoded",
             "cur_time" to curTime,
             "device_id" to deviceId,
             "en_al" to "0",
             "gaid" to gaid,
-            "Host" to "moviein.ajfysu.com",
+            "Host" to "filmin.ajfysu.com",
             "is_display" to "GMT+05:30",
             "is_language" to "en",
             "is_vvv" to "0",
             "log-header" to "I am the log request header.",
-            "mob_mfr" to "google",
-            "mobmodel" to "Pixel 5",
-            "package_name" to "com.fvvcl.flickverse",
+            "mob_mfr" to mobMfr,
+            "mobmodel" to mobModel,
+            "package_name" to "com.dramarush.shortin",
             "sign" to generateSign(curTime),
             "sys_platform" to "2",
             "sysrelease" to "13",
@@ -317,23 +345,23 @@ class CineTvProvider : MainAPI() {
         return mapOf(
             "Accept-Encoding" to "identity",
             "androidid" to deviceId,
-            "app_id" to "moviein",
+            "app_id" to "filmin",
             "app_language" to "en",
-            "channel_code" to "moviein_1001",
+            "channel_code" to "filmin_1001",
             "Connection" to "Keep-Alive",
             "Content-Type" to "application/x-www-form-urlencoded",
             "cur_time" to timestamp,
             "device_id" to deviceId,
             "en_al" to "0",
             "gaid" to gaid,
-            "Host" to "moviein.ajfysu.com",
+            "Host" to "filmin.ajfysu.com",
             "is_display" to "GMT+05:30",
             "is_language" to "en",
             "is_vvv" to "0",
             "log-header" to "I am the log request header.",
-            "mob_mfr" to "google",
-            "mobmodel" to "Pixel 5",
-            "package_name" to "com.fvvcl.flickverse",
+            "mob_mfr" to mobMfr,
+            "mobmodel" to mobModel,
+            "package_name" to "com.dramarush.shortin",
             "sign" to generateSign(timestamp),
             "sys_platform" to "2",
             "sysrelease" to "13",
