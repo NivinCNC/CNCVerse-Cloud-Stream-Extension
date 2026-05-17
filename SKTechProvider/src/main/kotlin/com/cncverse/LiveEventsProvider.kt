@@ -1,6 +1,12 @@
 package com.cncverse
 
+import android.os.Handler
+import android.os.Looper
 import android.util.Base64
+import android.webkit.WebChromeClient
+import android.webkit.WebSettings
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
@@ -14,6 +20,9 @@ import com.lagradost.cloudstream3.utils.newExtractorLink
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.TimeUnit
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -381,7 +390,7 @@ class LiveEventsProvider : MainAPI() {
 
         // Fetch stream URLs from /channels/{slug}.txt
         val streamResponse = fetchChannelStreams(loadData.slug)
-
+        println("SKTech: Fetched stream response for slug ${loadData.slug}: ${streamResponse} streams")
         if (streamResponse?.streamUrls.isNullOrEmpty()) {
             return false
         }
@@ -558,12 +567,292 @@ class LiveEventsProvider : MainAPI() {
 
     /**
      * Fetches the actual stream URL from a tokenApi configuration
+     * Handles different types: token, embed, json, sp, html, yt, ls
      */
     private suspend fun fetchStreamFromTokenApi(config: TokenApiConfig): String? {
         return withContext(Dispatchers.IO) {
             try {
+                println("SKTech: Fetching stream from tokenApi type=${config.type}")
+                
+                return@withContext when (config.type?.lowercase()) {
+                    "embed" -> handleEmbedExtraction(config)
+                    "json", "sp" -> handleJsonExtraction(config)
+                    "html" -> handleHtmlExtraction(config)
+                    "yt" -> handleYoutubeExtraction(config)
+                    "ls" -> handleLocationServiceExtraction(config)
+                    else -> handleDirectApiCall(config)
+                }
+            } catch (e: Exception) {
+                println("SKTech: Exception in fetchStreamFromTokenApi: ${e.message}")
+                e.printStackTrace()
+                null
+            }
+        }
+    }
+
+    /**
+     * Handle embed type: fetches from API, then loads in WebView and intercepts final streaming URL
+     */
+    private suspend fun handleEmbedExtraction(config: TokenApiConfig): String? {
+        return withContext(Dispatchers.IO) {
+            try {
+                // If url is empty, fetch from api first to get the embed page
+                val embedUrl = if (config.url.isNullOrBlank()) {
+                    val apiUrl = config.api ?: return@withContext null
+                    println("SKTech: Embed URL empty, fetching from API: $apiUrl")
+                    
+                    val request = Request.Builder()
+                        .url(apiUrl)
+                        .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+                        .build()
+                    
+                    val response = client.newCall(request).execute()
+                    if (response.isSuccessful) {
+                        val html = response.body.string()
+                        println("SKTech: API response (first 500 chars): ${html.take(500)}")
+                        
+                        // Try to extract stream URL directly from HTML first
+                        val directUrl = extractStreamUrlFromHtml(html)
+                        if (!directUrl.isNullOrBlank()) {
+                            println("SKTech: Extracted direct stream URL from HTML: $directUrl")
+                            return@withContext directUrl
+                        }
+                        
+                        // If no direct URL found, use the API response as embed URL
+                        html
+                    } else {
+                        println("SKTech: API request failed with status ${response.code}")
+                        return@withContext null
+                    }
+                } else {
+                    config.url
+                }
+
+                // If we got a URL that looks like a stream, return it directly
+                if (embedUrl.contains(".m3u8") || embedUrl.contains(".mpd") || 
+                    embedUrl.contains(".mp4") || embedUrl.contains(".ts") || 
+                    embedUrl.contains(".mkv") || embedUrl.contains(".webm")) {
+                    println("SKTech: Embed URL is already a stream: $embedUrl")
+                    return@withContext embedUrl
+                }
+
+                // Otherwise, load in WebView to intercept streaming requests
+                return@withContext loadEmbedInWebView(embedUrl, config)
+            } catch (e: Exception) {
+                println("SKTech: Exception in handleEmbedExtraction: ${e.message}")
+                e.printStackTrace()
+                null
+            }
+        }
+    }
+
+    /**
+     * Extract stream URL from HTML using common patterns
+     */
+    private fun extractStreamUrlFromHtml(html: String): String? {
+        val patterns = listOf(
+            // HLS patterns
+            "(?:['\"]|=)([^'\"\\s]*\\.m3u8[^'\"\\s]*)",
+            // DASH patterns
+            "(?:['\"]|=)([^'\"\\s]*\\.mpd[^'\"\\s]*)",
+            // Direct video patterns
+            "(?:['\"]|=)([^'\"\\s]*\\.(?:mp4|webm|mkv)[^'\"\\s]*)",
+            // Player.load pattern
+            "player\\.load\\(\\{[^}]*source:\\s*['\"]([^'\"]+)['\"]",
+            // src= pattern
+            "src\\s*=\\s*['\"]([^'\"]+(?:\\.m3u8|\\.mpd)[^'\"]*)['\"]"
+        )
+        
+        for (pattern in patterns) {
+            try {
+                val regex = Regex(pattern, RegexOption.IGNORE_CASE)
+                val match = regex.find(html)
+                if (match != null && match.groupValues.size > 1) {
+                    val url = match.groupValues[1]
+                    if (url.isNotBlank() && url.length > 10) {
+                        println("SKTech: Found stream URL via pattern: $url")
+                        return url
+                    }
+                }
+            } catch (e: Exception) {
+                // Continue to next pattern
+            }
+        }
+        return null
+    }
+
+    /**
+     * Load embed page in WebView and intercept streaming requests
+     */
+    private suspend fun loadEmbedInWebView(embedUrl: String, config: TokenApiConfig): String? {
+        return withContext(Dispatchers.Main) {
+            suspendCoroutine { continuation ->
+                try {
+                    val context = LiveEventsProvider.context
+                    if (context == null) {
+                        println("SKTech: No context available for WebView")
+                        continuation.resume(null)
+                        return@suspendCoroutine
+                    }
+
+                    val webView = WebView(context)
+                    val settings = webView.settings
+                    
+                    // Configure WebView for media playback
+                    settings.javaScriptEnabled = true
+                    settings.loadsImagesAutomatically = true
+                    settings.domStorageEnabled = true
+                    settings.allowContentAccess = true
+                    settings.allowFileAccess = true
+                    settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+                    settings.mediaPlaybackRequiresUserGesture = false
+
+                    var urlCaptured = false
+                    var capturedUrl: String? = null
+
+                    // Create bridge object to receive URLs from JavaScript
+                    val bridge = object {
+                        @android.webkit.JavascriptInterface
+                        fun onStreamUrlFound(url: String) {
+                            println("SKTech: JavaScript bridge received stream URL: $url")
+                            if (!urlCaptured && url.isNotBlank()) {
+                                urlCaptured = true
+                                capturedUrl = url
+                                Handler(Looper.getMainLooper()).post {
+                                    try {
+                                        webView.destroy()
+                                    } catch (e: Exception) {
+                                        // Already destroyed
+                                    }
+                                    continuation.resume(url)
+                                }
+                            }
+                        }
+                    }
+
+                    // Add JavaScript interface
+                    webView.addJavascriptInterface(bridge, "StreamBridge")
+
+                    // Set WebViewClient to intercept streaming URLs
+                    webView.webViewClient = object : WebViewClient() {
+                        override fun shouldInterceptRequest(view: WebView, request: android.webkit.WebResourceRequest): android.webkit.WebResourceResponse? {
+                            val url = request.url.toString()
+                            
+                            // Intercept streaming URLs (m3u8, mpd, mp4, ts, mkv, webm)
+                            if (url.contains(".m3u8") || url.contains(".mpd") || url.contains(".mp4") || 
+                                url.contains(".ts") || url.contains(".mkv") || url.contains(".webm")) {
+                                println("SKTech: Intercepted streaming URL from WebView: $url")
+                                if (!urlCaptured) {
+                                    urlCaptured = true
+                                    capturedUrl = url
+                                    // Cleanup and resume
+                                    Handler(Looper.getMainLooper()).post {
+                                        try {
+                                            webView.destroy()
+                                        } catch (e: Exception) {
+                                            // Already destroyed
+                                        }
+                                        continuation.resume(url)
+                                    }
+                                }
+                            }
+                            return super.shouldInterceptRequest(view, request)
+                        }
+
+                        override fun onPageFinished(view: WebView, pageUrl: String) {
+                            super.onPageFinished(view, pageUrl)
+                            println("SKTech: WebView page finished loading: $pageUrl")
+                            
+                            // If no URL was captured, inject JavaScript to extract playbackURL
+                            if (!urlCaptured) {
+                                Handler(Looper.getMainLooper()).postDelayed({
+                                    println("SKTech: Injecting JavaScript to extract stream URL")
+                                    try {
+                                        val jsCode = """
+                                            (function() {
+                                                if (typeof playbackURL !== 'undefined' && playbackURL) {
+                                                    window.StreamBridge.onStreamUrlFound(playbackURL);
+                                                }
+                                            })();
+                                        """.trimIndent()
+                                        webView.evaluateJavascript(jsCode, null)
+                                    } catch (e: Exception) {
+                                        println("SKTech: Error injecting JavaScript: ${e.message}")
+                                    }
+                                }, 500)
+                            }
+                            
+                            // Wait a bit more for dynamic content
+                            if (!urlCaptured) {
+                                Handler(Looper.getMainLooper()).postDelayed({
+                                    if (!urlCaptured) {
+                                        println("SKTech: No streaming URL found after page load timeout")
+                                        try {
+                                            webView.destroy()
+                                        } catch (e: Exception) {
+                                            // Already destroyed
+                                        }
+                                        continuation.resume(null)
+                                    }
+                                }, 3000)
+                            }
+                        }
+                    }
+
+                    webView.webChromeClient = WebChromeClient()
+
+                    println("SKTech: Loading embed in WebView")
+                    
+                    // Check if embedUrl is HTML content or a URL
+                    if (embedUrl.startsWith("<!DOCTYPE") || embedUrl.startsWith("<html")) {
+                        // It's HTML content, use loadDataWithBaseURL instead of loadUrl
+                        println("SKTech: Detected HTML content, loading with loadDataWithBaseURL")
+                        webView.loadDataWithBaseURL(
+                            "https://streamx550.com/",
+                            embedUrl,
+                            "text/html",
+                            "utf-8",
+                            null
+                        )
+                    } else {
+                        // It's a URL, use loadUrl
+                        println("SKTech: Loading URL: $embedUrl")
+                        webView.loadUrl(embedUrl)
+                    }
+                    
+                    // Timeout after 30 seconds
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        if (!urlCaptured && capturedUrl == null) {
+                            println("SKTech: Embed WebView extraction timeout after 30s")
+                            try {
+                                webView.destroy()
+                            } catch (e: Exception) {
+                                // Already destroyed
+                            }
+                            try {
+                                continuation.resume(null)
+                            } catch (e: Exception) {
+                                // Already resumed
+                            }
+                        }
+                    }, 30000)
+                } catch (e: Exception) {
+                    println("SKTech: Exception in loadEmbedInWebView: ${e.message}")
+                    e.printStackTrace()
+                    continuation.resume(null)
+                }
+            }
+        }
+    }
+
+    /**
+     * Handle JSON/SP type: parse JSON response and extract stream URL
+     */
+    private suspend fun handleJsonExtraction(config: TokenApiConfig): String? {
+        return withContext(Dispatchers.IO) {
+            try {
                 val apiUrl = config.api ?: return@withContext null
-                println("SKTech: Fetching stream from tokenApi: $apiUrl")
+                println("SKTech: Fetching JSON stream from: $apiUrl")
                 
                 val request = Request.Builder()
                     .url(apiUrl)
@@ -573,28 +862,181 @@ class LiveEventsProvider : MainAPI() {
                 val response = client.newCall(request).execute()
                 if (response.isSuccessful) {
                     val responseBody = response.body.string()
-                    println("SKTech: TokenApi response: ${responseBody.take(200)}")
+                    println("SKTech: JSON response: ${responseBody.take(200)}")
                     
-                    // Try to extract the stream URL using the link_key
+                    // Try to extract using link_key
                     if (!config.link_key.isNullOrBlank()) {
                         try {
                             val json = parseJson<Map<String, Any>>(responseBody)
                             val streamUrl = json[config.link_key] as? String
                             if (!streamUrl.isNullOrBlank()) {
-                                println("SKTech: Extracted stream URL: $streamUrl")
+                                println("SKTech: Extracted JSON stream URL: $streamUrl")
                                 return@withContext streamUrl
                             }
                         } catch (e: Exception) {
-                            println("SKTech: Failed to parse tokenApi response as JSON: ${e.message}")
+                            println("SKTech: Failed to parse JSON response: ${e.message}")
                         }
                     }
                     
-                    // If no link_key or extraction failed, return the response body as the URL
                     return@withContext responseBody.trim()
                 }
             } catch (e: Exception) {
-                println("SKTech: Exception fetching from tokenApi: ${e.message}")
-                e.printStackTrace()
+                println("SKTech: Exception in handleJsonExtraction: ${e.message}")
+            }
+            null
+        }
+    }
+
+    /**
+     * Handle HTML type: parse HTML response using regex patterns
+     */
+    private suspend fun handleHtmlExtraction(config: TokenApiConfig): String? {
+        return withContext(Dispatchers.IO) {
+            try {
+                val apiUrl = config.api ?: return@withContext null
+                println("SKTech: Fetching HTML stream from: $apiUrl")
+                
+                val request = Request.Builder()
+                    .url(apiUrl)
+                    .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+                    .build()
+                
+                val response = client.newCall(request).execute()
+                if (response.isSuccessful) {
+                    val responseBody = response.body.string()
+                    
+                    // Try to extract URL from HTML using common patterns
+                    val patterns = listOf(
+                        "player\\.load\\(\\{[^}]*source:\\s*\"([^\"]+)\"",
+                        "src\\s*=\\s*['\"]([^'\"]*\\.m3u8[^'\"]*)['\"]",
+                        "url\\s*:\\s*['\"]([^'\"]*\\.mpd[^'\"]*)['\"]"
+                    )
+                    
+                    for (pattern in patterns) {
+                        val regex = Regex(pattern)
+                        val match = regex.find(responseBody)
+                        if (match != null) {
+                            val url = match.groupValues[1]
+                            println("SKTech: Extracted HTML stream URL: $url")
+                            return@withContext url
+                        }
+                    }
+                    
+                    println("SKTech: No streaming URL found in HTML response")
+                }
+            } catch (e: Exception) {
+                println("SKTech: Exception in handleHtmlExtraction: ${e.message}")
+            }
+            null
+        }
+    }
+
+    /**
+     * Handle YouTube type: prepare for yt-dlp extraction
+     */
+    private suspend fun handleYoutubeExtraction(config: TokenApiConfig): String? {
+        return withContext(Dispatchers.IO) {
+            try {
+                val apiUrl = config.url ?: config.api ?: return@withContext null
+                println("SKTech: YouTube URL for extraction: $apiUrl")
+                
+                // Return the URL for external yt-dlp processing
+                // Cloudstream3 will handle YouTube extraction internally
+                return@withContext apiUrl
+            } catch (e: Exception) {
+                println("SKTech: Exception in handleYoutubeExtraction: ${e.message}")
+            }
+            null
+        }
+    }
+
+    /**
+     * Handle Location Service type: resolve region-based stream URL
+     */
+    private suspend fun handleLocationServiceExtraction(config: TokenApiConfig): String? {
+        return withContext(Dispatchers.IO) {
+            try {
+                val ipApiUrl = config.ip_api?.let { 
+                    if (it.startsWith("aHR0")) {
+                        // Base64 encoded
+                        String(Base64.decode(it, Base64.DEFAULT))
+                    } else {
+                        it
+                    }
+                } ?: "https://ip-api.streamingucms.com/"
+                
+                println("SKTech: Resolving location service from: $ipApiUrl")
+                
+                val request = Request.Builder()
+                    .url(ipApiUrl)
+                    .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+                    .build()
+                
+                val response = client.newCall(request).execute()
+                if (response.isSuccessful) {
+                    val responseBody = response.body.string()
+                    println("SKTech: Location service response: $responseBody")
+                    
+                    // Try to extract stream URL from response
+                    if (!config.link_key.isNullOrBlank()) {
+                        try {
+                            val json = parseJson<Map<String, Any>>(responseBody)
+                            val streamUrl = json[config.link_key] as? String
+                            if (!streamUrl.isNullOrBlank()) {
+                                println("SKTech: Extracted location-based stream URL: $streamUrl")
+                                return@withContext streamUrl
+                            }
+                        } catch (e: Exception) {
+                            // Continue
+                        }
+                    }
+                    
+                    return@withContext responseBody.trim()
+                }
+            } catch (e: Exception) {
+                println("SKTech: Exception in handleLocationServiceExtraction: ${e.message}")
+            }
+            null
+        }
+    }
+
+    /**
+     * Handle direct API call (token or unknown type)
+     */
+    private suspend fun handleDirectApiCall(config: TokenApiConfig): String? {
+        return withContext(Dispatchers.IO) {
+            try {
+                val apiUrl = config.api ?: return@withContext null
+                println("SKTech: Direct API call to: $apiUrl")
+                
+                val request = Request.Builder()
+                    .url(apiUrl)
+                    .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+                    .build()
+                
+                val response = client.newCall(request).execute()
+                if (response.isSuccessful) {
+                    val responseBody = response.body.string()
+                    println("SKTech: Direct API response: ${responseBody.take(200)}")
+                    
+                    // Try to extract using link_key
+                    if (!config.link_key.isNullOrBlank()) {
+                        try {
+                            val json = parseJson<Map<String, Any>>(responseBody)
+                            val streamUrl = json[config.link_key] as? String
+                            if (!streamUrl.isNullOrBlank()) {
+                                println("SKTech: Extracted stream URL from API: $streamUrl")
+                                return@withContext streamUrl
+                            }
+                        } catch (e: Exception) {
+                            // Continue
+                        }
+                    }
+                    
+                    return@withContext responseBody.trim()
+                }
+            } catch (e: Exception) {
+                println("SKTech: Exception in handleDirectApiCall: ${e.message}")
             }
             null
         }
