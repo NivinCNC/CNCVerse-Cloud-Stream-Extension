@@ -1,6 +1,12 @@
 package com.cncverse
 
+import android.os.Handler
+import android.os.Looper
 import android.util.Base64
+import android.webkit.WebChromeClient
+import android.webkit.WebSettings
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
@@ -14,6 +20,8 @@ import com.lagradost.cloudstream3.utils.newExtractorLink
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.TimeUnit
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -361,6 +369,8 @@ class LiveEventsProvider : MainAPI() {
 
             if (url.isBlank()) return@forEach
 
+            val resolvedUrl = resolveEmbedUrlIfNeeded(url) ?: return@forEach
+
             try {
                 when (stream.type) {
                     "7" -> {
@@ -392,7 +402,7 @@ class LiveEventsProvider : MainAPI() {
                                     newDrmExtractorLink(
                                             this.name,
                                             serverName,
-                                            url,
+                                            resolvedUrl,
                                             INFER_TYPE,
                                             CLEARKEY_UUID
                                     ) {
@@ -410,7 +420,7 @@ class LiveEventsProvider : MainAPI() {
                                     newExtractorLink(
                                             source = this.name,
                                             name = serverName,
-                                            url = url,
+                                        url = resolvedUrl,
                                             type = ExtractorLinkType.DASH
                                     ) {
                                         this.quality = Qualities.Unknown.value
@@ -424,7 +434,7 @@ class LiveEventsProvider : MainAPI() {
                     else -> {
                         // M3U8 or other types
                         val linkType =
-                                if (url.contains(".mpd")) {
+                                if (resolvedUrl.contains(".mpd")) {
                                     ExtractorLinkType.DASH
                                 } else {
                                     ExtractorLinkType.M3U8
@@ -439,7 +449,7 @@ class LiveEventsProvider : MainAPI() {
                                 newExtractorLink(
                                         source = this.name,
                                         name = serverName,
-                                        url = url,
+                                    url = resolvedUrl,
                                         type = linkType
                                 ) {
                                     this.quality = Qualities.Unknown.value
@@ -456,6 +466,147 @@ class LiveEventsProvider : MainAPI() {
         }
 
         return true
+    }
+
+    private fun isDirectStreamUrl(url: String): Boolean {
+        return url.contains(".m3u8") || url.contains(".mpd") || url.contains(".mp4") ||
+                url.contains(".ts") || url.contains(".mkv") || url.contains(".webm")
+    }
+
+    private suspend fun resolveEmbedUrlIfNeeded(url: String): String? {
+        if (isDirectStreamUrl(url)) {
+            return url
+        }
+        return loadEmbedInWebView(url)
+    }
+
+    /**
+     * Load embed page in WebView and intercept streaming requests
+     */
+    private suspend fun loadEmbedInWebView(embedUrl: String): String? {
+        return withContext(Dispatchers.Main) {
+            suspendCoroutine { continuation ->
+                try {
+                    val context = LiveEventsProvider.context
+                    if (context == null) {
+                        continuation.resume(null)
+                        return@suspendCoroutine
+                    }
+
+                    val webView = WebView(context)
+                    val settings = webView.settings
+
+                    settings.javaScriptEnabled = true
+                    settings.loadsImagesAutomatically = true
+                    settings.domStorageEnabled = true
+                    settings.allowContentAccess = true
+                    settings.allowFileAccess = true
+                    settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+                    settings.mediaPlaybackRequiresUserGesture = false
+
+                    var urlCaptured = false
+                    var capturedUrl: String? = null
+
+                    val bridge = object {
+                        @android.webkit.JavascriptInterface
+                        fun onStreamUrlFound(url: String) {
+                            if (!urlCaptured && url.isNotBlank()) {
+                                urlCaptured = true
+                                capturedUrl = url
+                                Handler(Looper.getMainLooper()).post {
+                                    try {
+                                        webView.destroy()
+                                    } catch (e: Exception) {
+                                        // Already destroyed
+                                    }
+                                    continuation.resume(url)
+                                }
+                            }
+                        }
+                    }
+
+                    webView.addJavascriptInterface(bridge, "StreamBridge")
+
+                    webView.webViewClient = object : WebViewClient() {
+                        override fun shouldInterceptRequest(
+                                view: WebView,
+                                request: android.webkit.WebResourceRequest
+                        ): android.webkit.WebResourceResponse? {
+                            val requestUrl = request.url.toString()
+                            if (isDirectStreamUrl(requestUrl)) {
+                                if (!urlCaptured) {
+                                    urlCaptured = true
+                                    capturedUrl = requestUrl
+                                    Handler(Looper.getMainLooper()).post {
+                                        try {
+                                            webView.destroy()
+                                        } catch (e: Exception) {
+                                            // Already destroyed
+                                        }
+                                        continuation.resume(requestUrl)
+                                    }
+                                }
+                            }
+                            return super.shouldInterceptRequest(view, request)
+                        }
+
+                        override fun onPageFinished(view: WebView, pageUrl: String) {
+                            super.onPageFinished(view, pageUrl)
+
+                            if (!urlCaptured) {
+                                Handler(Looper.getMainLooper()).postDelayed({
+                                    try {
+                                        val jsCode = """
+                                            (function() {
+                                                if (typeof playbackURL !== 'undefined' && playbackURL) {
+                                                    window.StreamBridge.onStreamUrlFound(playbackURL);
+                                                }
+                                            })();
+                                        """.trimIndent()
+                                        webView.evaluateJavascript(jsCode, null)
+                                    } catch (e: Exception) {
+                                        // Ignore
+                                    }
+                                }, 500)
+                            }
+
+                            if (!urlCaptured) {
+                                Handler(Looper.getMainLooper()).postDelayed({
+                                    if (!urlCaptured) {
+                                        try {
+                                            webView.destroy()
+                                        } catch (e: Exception) {
+                                            // Already destroyed
+                                        }
+                                        continuation.resume(null)
+                                    }
+                                }, 3000)
+                            }
+                        }
+                    }
+
+                    webView.webChromeClient = WebChromeClient()
+                    webView.loadUrl(embedUrl)
+
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        if (!urlCaptured && capturedUrl == null) {
+                            try {
+                                webView.destroy()
+                            } catch (e: Exception) {
+                                // Already destroyed
+                            }
+                            try {
+                                continuation.resume(null)
+                            } catch (e: Exception) {
+                                // Already resumed
+                            }
+                        }
+                    }, 30000)
+                } catch (e: Exception) {
+                    continuation.resume(null)
+                }
+            }
+        }
     }
 
     /** Fetches stream URLs from /channels/{slug}.txt */

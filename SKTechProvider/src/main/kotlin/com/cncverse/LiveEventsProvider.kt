@@ -596,36 +596,13 @@ class LiveEventsProvider : MainAPI() {
     private suspend fun handleEmbedExtraction(config: TokenApiConfig): String? {
         return withContext(Dispatchers.IO) {
             try {
-                // If url is empty, fetch from api first to get the embed page
-                val embedUrl = if (config.url.isNullOrBlank()) {
-                    val apiUrl = config.api ?: return@withContext null
-                    println("SKTech: Embed URL empty, fetching from API: $apiUrl")
-                    
-                    val request = Request.Builder()
-                        .url(apiUrl)
-                        .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
-                        .build()
-                    
-                    val response = client.newCall(request).execute()
-                    if (response.isSuccessful) {
-                        val html = response.body.string()
-                        println("SKTech: API response (first 500 chars): ${html.take(500)}")
-                        
-                        // Try to extract stream URL directly from HTML first
-                        val directUrl = extractStreamUrlFromHtml(html)
-                        if (!directUrl.isNullOrBlank()) {
-                            println("SKTech: Extracted direct stream URL from HTML: $directUrl")
-                            return@withContext directUrl
-                        }
-                        
-                        // If no direct URL found, use the API response as embed URL
-                        html
-                    } else {
-                        println("SKTech: API request failed with status ${response.code}")
-                        return@withContext null
-                    }
-                } else {
-                    config.url
+                val embedUrl = config.url?.takeIf { it.isNotBlank() } ?: config.api?.takeIf { it.isNotBlank() }
+                if (embedUrl.isNullOrBlank()) {
+                    return@withContext null
+                }
+
+                if (config.url.isNullOrBlank()) {
+                    println("SKTech: Embed URL empty, using API URL as embed URL: $embedUrl")
                 }
 
                 // If we got a URL that looks like a stream, return it directly
@@ -644,41 +621,6 @@ class LiveEventsProvider : MainAPI() {
                 null
             }
         }
-    }
-
-    /**
-     * Extract stream URL from HTML using common patterns
-     */
-    private fun extractStreamUrlFromHtml(html: String): String? {
-        val patterns = listOf(
-            // HLS patterns
-            "(?:['\"]|=)([^'\"\\s]*\\.m3u8[^'\"\\s]*)",
-            // DASH patterns
-            "(?:['\"]|=)([^'\"\\s]*\\.mpd[^'\"\\s]*)",
-            // Direct video patterns
-            "(?:['\"]|=)([^'\"\\s]*\\.(?:mp4|webm|mkv)[^'\"\\s]*)",
-            // Player.load pattern
-            "player\\.load\\(\\{[^}]*source:\\s*['\"]([^'\"]+)['\"]",
-            // src= pattern
-            "src\\s*=\\s*['\"]([^'\"]+(?:\\.m3u8|\\.mpd)[^'\"]*)['\"]"
-        )
-        
-        for (pattern in patterns) {
-            try {
-                val regex = Regex(pattern, RegexOption.IGNORE_CASE)
-                val match = regex.find(html)
-                if (match != null && match.groupValues.size > 1) {
-                    val url = match.groupValues[1]
-                    if (url.isNotBlank() && url.length > 10) {
-                        println("SKTech: Found stream URL via pattern: $url")
-                        return url
-                    }
-                }
-            } catch (e: Exception) {
-                // Continue to next pattern
-            }
-        }
-        return null
     }
 
     /**
@@ -803,22 +745,8 @@ class LiveEventsProvider : MainAPI() {
 
                     println("SKTech: Loading embed in WebView")
                     
-                    // Check if embedUrl is HTML content or a URL
-                    if (embedUrl.startsWith("<!DOCTYPE") || embedUrl.startsWith("<html")) {
-                        // It's HTML content, use loadDataWithBaseURL instead of loadUrl
-                        println("SKTech: Detected HTML content, loading with loadDataWithBaseURL")
-                        webView.loadDataWithBaseURL(
-                            "https://streamx550.com/",
-                            embedUrl,
-                            "text/html",
-                            "utf-8",
-                            null
-                        )
-                    } else {
-                        // It's a URL, use loadUrl
                         println("SKTech: Loading URL: $embedUrl")
                         webView.loadUrl(embedUrl)
-                    }
                     
                     // Timeout after 30 seconds
                     Handler(Looper.getMainLooper()).postDelayed({
