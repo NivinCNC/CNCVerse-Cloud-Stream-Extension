@@ -9,8 +9,7 @@ import kotlinx.coroutines.delay
 import org.json.JSONObject
 import java.net.URLEncoder
 import okhttp3.*
-import com.google.gson.Gson
-import com.google.gson.annotations.SerializedName
+import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 
 class StreamFlixProvider : MainAPI() {
     companion object {
@@ -24,72 +23,71 @@ class StreamFlixProvider : MainAPI() {
     override val hasMainPage = true
     override val hasQuickSearch = true
 
-    private val gson = Gson()
     private var configData: ConfigResponse? = null
     
     // Data classes for API responses
     data class StreamFlixData(
-        @SerializedName("data") val data: List<StreamFlixItem>
+        @JsonProperty("data") val data: List<StreamFlixItem>
     )
 
     data class StreamFlixItem(
-        @SerializedName("isTV") val isTV: Boolean,
-        @SerializedName("moviename") val movieName: String?,
-        @SerializedName("moviedesc") val movieDesc: String?,
-        @SerializedName("movieposter") val moviePoster: String?,
-        @SerializedName("moviebanner") val movieBanner: String?,
-        @SerializedName("movieyear") val movieYear: String?,
-        @SerializedName("movierating") val movieRating: Double,
-        @SerializedName("movietype") val movieType: String?,
-        @SerializedName("movieinfo") val movieInfo: String?,
-        @SerializedName("movieduration") val movieDuration: String?,
-        @SerializedName("moviekey") val movieKey: String?,
-        @SerializedName("movielink") val movieLink: String?,
-        @SerializedName("movietrailer") val movieTrailer: String?,
-        @SerializedName("movieimdb") val movieImdb: String?,
-        @SerializedName("tmdb") val tmdb: String?,
-        @SerializedName("movieviews") val movieViews: Int?,
-        @SerializedName("newseason") val newSeason: String?
+        @JsonProperty("isTV") val isTV: Boolean,
+        @JsonProperty("moviename") val movieName: String?,
+        @JsonProperty("moviedesc") val movieDesc: String?,
+        @JsonProperty("movieposter") val moviePoster: String?,
+        @JsonProperty("moviebanner") val movieBanner: String?,
+        @JsonProperty("movieyear") val movieYear: String?,
+        @JsonProperty("movierating") val movieRating: Double,
+        @JsonProperty("movietype") val movieType: String?,
+        @JsonProperty("movieinfo") val movieInfo: String?,
+        @JsonProperty("movieduration") val movieDuration: String?,
+        @JsonProperty("moviekey") val movieKey: String?,
+        @JsonProperty("movielink") val movieLink: String?,
+        @JsonProperty("movietrailer") val movieTrailer: String?,
+        @JsonProperty("movieimdb") val movieImdb: String?,
+        @JsonProperty("tmdb") val tmdb: String?,
+        @JsonProperty("movieviews") val movieViews: Int?,
+        @JsonProperty("newseason") val newSeason: String?
     )
 
     data class ConfigResponse(
-        @SerializedName("movies") val movies: List<String>,
-        @SerializedName("tv") val tv: List<String>,
-        @SerializedName("premium") val premium: List<String>,
-        @SerializedName("download") val download: List<String>,
-        @SerializedName("latest") val latest: Int,
-        @SerializedName("banner") val banner: String,
-        @SerializedName("video") val video: String,
-        @SerializedName("newapp") val newApp: Boolean,
-        @SerializedName("notice") val notice: Boolean,
-        @SerializedName("title") val title: String,
-        @SerializedName("text") val text: String
+        @JsonProperty("movies") val movies: List<String>,
+        @JsonProperty("tv") val tv: List<String>,
+        @JsonProperty("premium") val premium: List<String>,
+        @JsonProperty("download") val download: List<String>,
+        @JsonProperty("latest") val latest: Int,
+        @JsonProperty("banner") val banner: String,
+        @JsonProperty("video") val video: String,
+        @JsonProperty("newapp") val newApp: Boolean,
+        @JsonProperty("notice") val notice: Boolean,
+        @JsonProperty("title") val title: String,
+        @JsonProperty("text") val text: String
     )
 
     data class WebSocketRequest(
-        @SerializedName("t") val type: String,
-        @SerializedName("d") val data: WebSocketData
+        @JsonProperty("t") val type: String,
+        @JsonProperty("d") val data: WebSocketData
     )
 
     data class WebSocketData(
-        @SerializedName("a") val action: String,
-        @SerializedName("r") val request: Int,
-        @SerializedName("b") val body: WebSocketBody
+        @JsonProperty("a") val action: String,
+        @JsonProperty("r") val request: Int,
+        @JsonProperty("b") val body: WebSocketBody
     )
 
     data class WebSocketBody(
-        @SerializedName("p") val path: String,
-        @SerializedName("h") val hash: String
+        @JsonProperty("p") val path: String,
+        @JsonProperty("h") val hash: String
     )
 
     data class Episode(
-        @SerializedName("key") val key: Int,
-        @SerializedName("link") val link: String,
-        @SerializedName("name") val name: String,
-        @SerializedName("overview") val overview: String,
-        @SerializedName("runtime") val runtime: Int,
-        @SerializedName("still_path") val stillPath: String?,
-        @SerializedName("vote_average") val voteAverage: Double
+        @JsonProperty("key") val key: Int,
+        @JsonProperty("link") val link: String,
+        @JsonProperty("name") val name: String,
+        @JsonProperty("overview") val overview: String,
+        @JsonProperty("runtime") val runtime: Int,
+        @JsonProperty("still_path") val stillPath: String?,
+        @JsonProperty("vote_average") val voteAverage: Double
     )
 
     private suspend fun getConfig(): ConfigResponse? {
@@ -103,7 +101,7 @@ class StreamFlixProvider : MainAPI() {
                 )
                 
                 val response = app.get("$mainUrl/config/config-streamflixapp.json", headers = headers, timeout = 30)
-                configData = gson.fromJson(response.text, ConfigResponse::class.java)
+                configData = parseJson<ConfigResponse>(response.text)
             } catch (e: Exception) {
                 
                 // Fallback config
@@ -141,7 +139,7 @@ class StreamFlixProvider : MainAPI() {
             
             val response = app.get("$mainUrl/data.json", headers = headers, timeout = 30)
             
-            val data = gson.fromJson(response.text, StreamFlixData::class.java)
+            val data = parseJson<StreamFlixData>(response.text)
             
             val movies = data.data.filter { !it.isTV && !it.movieName.isNullOrBlank() }.take(20).map { item ->
                 newMovieSearchResponse(
@@ -207,7 +205,7 @@ class StreamFlixProvider : MainAPI() {
             )
             
             val response = app.get("$mainUrl/data.json", headers = headers, timeout = 30)
-            val data = gson.fromJson(response.text, StreamFlixData::class.java)
+            val data = parseJson<StreamFlixData>(response.text)
             
             val filteredItems = data.data.filter { 
                 !it.movieName.isNullOrBlank() &&
@@ -277,7 +275,7 @@ class StreamFlixProvider : MainAPI() {
             )
             
             val response = app.get("$mainUrl/data.json", headers = headers, timeout = 30)
-            val data = gson.fromJson(response.text, StreamFlixData::class.java)
+            val data = parseJson<StreamFlixData>(response.text)
             val item = data.data.find { it.movieKey == movieKey }
                 ?: throw Exception("Movie not found")
 

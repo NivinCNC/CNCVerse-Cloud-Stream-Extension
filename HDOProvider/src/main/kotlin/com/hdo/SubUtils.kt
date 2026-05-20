@@ -1,7 +1,5 @@
 package com.hdo
 
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import com.lagradost.api.Log
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.*
@@ -98,10 +96,8 @@ object SubUtils {
             "$WyZIESUBAPI/search?id=$id&season=$season&episode=$episode"
         }
 
-        val res = app.get(url).toString()
-        val gson = Gson()
-        val listType = object : TypeToken<List<WyZIESUB>>() {}.type
-        val subtitles: List<WyZIESUB> = gson.fromJson(res, listType)
+        val res = app.get(url).text
+        val subtitles = tryParseJson<List<WyZIESUB>>(res).orEmpty()
         subtitles.map {
             val lan = it.display ?: "Unknown"
             val suburl = it.url ?: ""

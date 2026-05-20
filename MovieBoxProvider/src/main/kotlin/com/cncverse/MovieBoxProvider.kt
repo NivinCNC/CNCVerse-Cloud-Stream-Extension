@@ -49,6 +49,7 @@ import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 import kotlin.math.max
 import java.security.SecureRandom
+import kotlin.random.Random
 class MovieBoxProvider : MainAPI() {
     companion object {
         var context: android.content.Context? = null
@@ -904,6 +905,7 @@ private suspend fun searchAndPick(
             append("?api_key=").append("1865f43a0549ca50d341dd9ab8b29f49")
             append(extraParams)
             append("&include_adult=false&page=1")
+            append("&random=").append(Random.nextInt())
         }
         val text = app.get(url).text
         return JSONObject(text).optJSONArray("results")
@@ -989,7 +991,7 @@ private suspend fun searchAndPick(
 
     // fetch details for external_ids
     val detailKind = if (bestIsTv) "tv" else "movie"
-    val detailUrl = "https://api.themoviedb.org/3/$detailKind/$bestId?api_key=1865f43a0549ca50d341dd9ab8b29f49&append_to_response=external_ids"
+    val detailUrl = "https://api.themoviedb.org/3/$detailKind/$bestId?api_key=1865f43a0549ca50d341dd9ab8b29f49&append_to_response=external_ids&random=${Random.nextInt()}"
     val detailText = app.get(detailUrl).text
     val detailJson = JSONObject(detailText)
     val imdbId = detailJson.optJSONObject("external_ids")?.optString("imdb_id")
@@ -1042,9 +1044,9 @@ suspend fun fetchTmdbLogoUrl(
     if (tmdbId == null) return null
 
     val url = if (type == TvType.Movie)
-        "$tmdbAPI/movie/$tmdbId/images?api_key=$apiKey"
+        "$tmdbAPI/movie/$tmdbId/images?api_key=$apiKey&random=${Random.nextInt()}"
     else
-        "$tmdbAPI/tv/$tmdbId/images?api_key=$apiKey"
+        "$tmdbAPI/tv/$tmdbId/images?api_key=$apiKey&random=${Random.nextInt()}"
 
     val json = runCatching { JSONObject(app.get(url).text) }.getOrNull() ?: return null
     val logos = json.optJSONArray("logos") ?: return null

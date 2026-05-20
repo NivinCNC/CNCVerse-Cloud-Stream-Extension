@@ -1,7 +1,5 @@
 package com.cncverse
 
-import com.google.gson.Gson
-import com.google.gson.annotations.SerializedName
 import com.lagradost.api.Log
 import com.lagradost.cloudstream3.SubtitleFile
 import com.lagradost.cloudstream3.app
@@ -9,6 +7,8 @@ import com.lagradost.cloudstream3.newSubtitleFile
 import com.lagradost.cloudstream3.utils.ExtractorApi
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.M3u8Helper.Companion.generateM3u8
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import java.net.URLEncoder
 
 class Videostr : ExtractorApi() {
@@ -39,10 +39,9 @@ class Videostr : ExtractorApi() {
         } ?: throw Exception("Nonce not found")
 
         val apiUrl = "$mainUrl/embed-1/v3/e-1/getSources?id=$id&_k=$nonce"
-        val gson = Gson()
         val response = try {
             val json = app.get(apiUrl, headers).text
-            gson.fromJson(json, VideostrResponse::class.java)
+            parseJson<VideostrResponse>(json)
         } catch (e: Exception) {
             throw Exception("Failed to parse VideostrResponse: ${e.message}")
         }
@@ -53,7 +52,7 @@ class Videostr : ExtractorApi() {
             val keyJson = app.get(
                 "https://raw.githubusercontent.com/yogesh-hacker/MegacloudKeys/refs/heads/main/keys.json"
             ).text
-            gson.fromJson(keyJson, Megakey::class.java)?.vidstr
+            parseJson<Megakey>(keyJson).vidstr
         } catch (e: Exception) {
             throw Exception("Failed to parse Megakey: ${e.message}")
         } ?: throw Exception("Decryption key not found")
@@ -108,7 +107,7 @@ class Videostr : ExtractorApi() {
         val sources: List<VideostrSource>,
         val tracks: List<Track>,
         val encrypted: Boolean,
-        @SerializedName("_f") val f: String,
+        @JsonProperty("_f") val f: String,
         val server: Long,
     )
 

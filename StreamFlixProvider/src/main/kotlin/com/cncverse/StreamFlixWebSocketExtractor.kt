@@ -1,46 +1,45 @@
 package com.cncverse
 
-import com.google.gson.annotations.SerializedName
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.app
 import com.lagradost.api.Log
 import okhttp3.*
-import com.google.gson.Gson
-import com.google.gson.JsonObject
-import com.google.gson.JsonParser
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.databind.JsonNode
+import com.lagradost.cloudstream3.utils.AppUtils.parseJson
+import com.lagradost.cloudstream3.utils.AppUtils.toJson
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.resume
 
 class StreamFlixWebSocketExtractor {
-    private val gson = Gson()
     private val client = OkHttpClient()
 
     data class WebSocketRequest(
-        @SerializedName("t") val t: String,
-        @SerializedName("d") val d: WebSocketData
+        @JsonProperty("t") val t: String,
+        @JsonProperty("d") val d: WebSocketData
     )
 
     data class WebSocketData(
-        @SerializedName("a") val a: String,
-        @SerializedName("r") val r: Int,
-        @SerializedName("b") val b: WebSocketBody
+        @JsonProperty("a") val a: String,
+        @JsonProperty("r") val r: Int,
+        @JsonProperty("b") val b: WebSocketBody
     )
 
     data class WebSocketBody(
-        @SerializedName("p") val p: String,
-        @SerializedName("h") val h: String
+        @JsonProperty("p") val p: String,
+        @JsonProperty("h") val h: String
     )
 
     data class EpisodeData(
-        @SerializedName("key") val key: Int,
-        @SerializedName("link") val link: String,
-        @SerializedName("name") val name: String,
-        @SerializedName("overview") val overview: String,
-        @SerializedName("runtime") val runtime: Int,
-        @SerializedName("still_path") val stillPath: String?,
-        @SerializedName("vote_average") val voteAverage: Double
+        @JsonProperty("key") val key: Int,
+        @JsonProperty("link") val link: String,
+        @JsonProperty("name") val name: String,
+        @JsonProperty("overview") val overview: String,
+        @JsonProperty("runtime") val runtime: Int,
+        @JsonProperty("still_path") val stillPath: String?,
+        @JsonProperty("vote_average") val voteAverage: Double
     )
 
     suspend fun getEpisodesFromWebSocket(movieKey: String, totalSeasons: Int = 1): Map<Int, Map<Int, EpisodeData>> {
@@ -75,7 +74,7 @@ class StreamFlixWebSocketExtractor {
                             )
                         )
                         
-                        val requestJson = gson.toJson(requestData)
+                        val requestJson = requestData.toJson()
                         webSocket.send(requestJson)
                         Log.d("StreamFlix", "Sent request for season $currentSeason: $requestJson")
                     }
@@ -100,7 +99,7 @@ class StreamFlixWebSocketExtractor {
                         val fullMessage = messageBuffer.toString()
                         
                         try {
-                            val jsonObject = JsonParser.parseString(fullMessage).asJsonObject
+                            val jsonObject = mapper.readTree(fullMessage)
                             // Successfully parsed, clear buffer and process
                             messageBuffer.clear()
                             processJsonMessage(jsonObject, webSocket)
@@ -118,14 +117,15 @@ class StreamFlixWebSocketExtractor {
                         }
                     }
                     
-                    private fun processJsonMessage(jsonObject: JsonObject, webSocket: WebSocket) {
+                    private fun processJsonMessage(jsonObject: JsonNode, webSocket: WebSocket) {
                         try {
-                            if (jsonObject.has("t") && jsonObject.get("t").asString == "d") {
-                                val data = jsonObject.getAsJsonObject("d")
+                            if (jsonObject.has("t") && jsonObject.get("t").asText() == "d") {
+                                val data = jsonObject.get("d")
                                 
                                 // Check for completion status message
-                                if (data.has("r") && data.has("b") && data.getAsJsonObject("b").has("s")) {
-                                    val status = data.getAsJsonObject("b").get("s").asString
+                                val bData = data.get("b")
+                                if (data.has("r") && bData != null && bData.has("s")) {
+                                    val status = bData.get("s").asText()
                                     if (status == "ok") {
                                         Log.d("StreamFlix", "Received completion status for season $currentSeason")
                                         seasonsCompleted++
@@ -149,7 +149,7 @@ class StreamFlixWebSocketExtractor {
                                                 )
                                             )
                                             
-                                            webSocket.send(gson.toJson(requestData))
+                                            webSocket.send(requestData.toJson())
                                             Log.d("StreamFlix", "Requesting season $currentSeason")
                                         } else {
                                             // All seasons completed, close and return
@@ -163,19 +163,18 @@ class StreamFlixWebSocketExtractor {
                                     }
                                 }
                                 
-                                if (data.has("b") && data.getAsJsonObject("b").has("d")) {
-                                    val bObject = data.getAsJsonObject("b")
-                                    val episodes = bObject.getAsJsonObject("d")
+                                if (bData != null && bData.has("d")) {
+                                    val episodes = bData.get("d")
                                     
                                     // Extract season number from path
-                                    val path = bObject.get("p")?.asString ?: ""
+                                    val path = bData.get("p")?.asText() ?: ""
                                     val seasonMatch = Regex("seasons/(\\d+)/episodes").find(path)
                                     val seasonNumber = seasonMatch?.groupValues?.get(1)?.toIntOrNull() ?: currentSeason
                                     
                                     val episodeMap = mutableMapOf<Int, EpisodeData>()
-                                    episodes.entrySet().forEach { entry ->
+                                    episodes?.fields()?.forEach { entry ->
                                         try {
-                                            val episodeData = gson.fromJson(entry.value, EpisodeData::class.java)
+                                            val episodeData = parseJson<EpisodeData>(entry.value.toString())
                                             episodeMap[entry.key.toInt()] = episodeData
                                             Log.d("StreamFlix", "Parsed episode ${entry.key}: ${episodeData.name}")
                                         } catch (e: Exception) {
