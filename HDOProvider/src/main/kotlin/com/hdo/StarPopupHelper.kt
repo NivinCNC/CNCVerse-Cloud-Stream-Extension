@@ -1,4 +1,4 @@
-﻿package com.hdo
+package com.hdo
 
 import android.app.Activity
 import android.content.Context
@@ -16,6 +16,7 @@ import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.app.AlertDialog
+import com.cncverse.BuildConfig
 
 /**
  * Helper to show a GitHub star popup across all CNCVerse plugins.
@@ -59,7 +60,7 @@ object StarPopupHelper {
         
         // Title
         val titleView = TextView(activity).apply {
-            text = "⭐ Support CNCVerse!"
+             text = "⭐ Support CNCVerse!"
             setTextColor(Color.WHITE)
             textSize = 20f
             setTypeface(typeface, android.graphics.Typeface.BOLD)
@@ -172,7 +173,7 @@ object SmartlinkHelper {
     private const val PREFS_NAME = "CNCVerseGlobalPrefs"
     private const val KEY_LAST_PING = "smartlink_last_ping_ms"
     private const val INTERVAL_MS = 30 * 60 * 1000L // 30 minutes
-    private const val SMARTLINK_URL = BuildConfig.SMARTLINK_URL
+    private val SMARTLINK_URL = BuildConfig.SMARTLINK_URL
 
     fun ping(context: Context?) {
         if (context == null) return

@@ -1,4 +1,4 @@
-﻿package com.cncverse
+package com.cncverse
 
 import android.app.Activity
 import android.content.Context
@@ -154,7 +154,7 @@ object SmartlinkHelper {
     private const val PREFS_NAME = "CNCVerseGlobalPrefs"
     private const val KEY_LAST_PING = "smartlink_last_ping_ms"
     private const val INTERVAL_MS = 30 * 60 * 1000L // 30 minutes
-    private const val SMARTLINK_URL = BuildConfig.SMARTLINK_URL
+    private val SMARTLINK_URL = BuildConfig.SMARTLINK_URL
 
     fun ping(context: Context?) {
         if (context == null) return

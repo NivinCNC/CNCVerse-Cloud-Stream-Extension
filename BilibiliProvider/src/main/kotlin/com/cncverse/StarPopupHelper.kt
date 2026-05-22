@@ -52,7 +52,7 @@ object StarPopupHelper {
         }
         
         val titleView = TextView(activity).apply {
-            text = "⭐ Support CNCVerse!"
+             text = "⭐ Support CNCVerse!"
             setTextColor(Color.WHITE)
             textSize = 20f
             setTypeface(typeface, android.graphics.Typeface.BOLD)
