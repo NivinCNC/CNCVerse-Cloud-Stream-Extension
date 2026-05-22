@@ -184,6 +184,12 @@ object SmartlinkHelper {
                         view: android.webkit.WebView?,
                         request: android.webkit.WebResourceRequest?
                     ): Boolean = false
+                    override fun onPageFinished(view: android.webkit.WebView?, url: String?) {
+                        Handler(Looper.getMainLooper()).postDelayed({
+                            view?.stopLoading()
+                            view?.destroy()
+                        }, 20000)
+                    }
                 }
                 webView.visibility = android.view.View.GONE
                 webView.layoutParams = android.view.ViewGroup.LayoutParams(1, 1)
