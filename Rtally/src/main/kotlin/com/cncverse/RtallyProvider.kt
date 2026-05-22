@@ -1,4 +1,4 @@
-package com.cncverse
+﻿package com.cncverse
 import com.lagradost.cloudstream3.Episode
 import com.lagradost.cloudstream3.HomePageResponse
 import com.lagradost.cloudstream3.LoadResponse
@@ -108,6 +108,7 @@ class RtallyProvider : MainAPI() {
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
+        SmartlinkHelper.ping(context)
         val doc = app.get(
             "$mainUrl/search/$query",
             cacheTime = 60,
@@ -117,6 +118,7 @@ class RtallyProvider : MainAPI() {
     }
 
     override suspend fun load(url: String): LoadResponse {
+        SmartlinkHelper.ping(context)
         val doc = app.get(
             url,
             cacheTime = 60,

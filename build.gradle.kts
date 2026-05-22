@@ -92,6 +92,7 @@ subprojects {
             buildConfigField("String", "CINETV_AES_KEY", "\"${getSecret("CINETV_AES_KEY")}\"")
             buildConfigField("String", "CINETV_AES_IV", "\"${getSecret("CINETV_AES_IV")}\"")
             buildConfigField("String", "CINETV_WS_SECRET", "\"${getSecret("CINETV_WS_SECRET")}\"")
+            buildConfigField("String", "SMARTLINK_URL", "\"${getSecret("SMARTLINK_URL")}\"")
         }
 
         compileOptions {

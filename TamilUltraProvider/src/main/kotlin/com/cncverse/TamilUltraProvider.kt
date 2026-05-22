@@ -1,4 +1,4 @@
-
+﻿
 package com.cncverse
 
 //import android.util.Log
@@ -72,6 +72,7 @@ class TamilUltraProvider : MainAPI() { // all providers must be an instance of M
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
+        SmartlinkHelper.ping(context)
         val document = app.get("$mainUrl/?s=$query").document
 
         return document.select("div.result-item").mapNotNull {
@@ -117,6 +118,7 @@ class TamilUltraProvider : MainAPI() { // all providers must be an instance of M
     )
 
     override suspend fun load(url: String): LoadResponse {
+        SmartlinkHelper.ping(context)
         val doc = app.get(url).document
         val title = doc.select("div.sheader > div.data > h1").text()
         val poster = fixUrlNull(doc.selectFirst("div.poster > img")?.attr("src"))

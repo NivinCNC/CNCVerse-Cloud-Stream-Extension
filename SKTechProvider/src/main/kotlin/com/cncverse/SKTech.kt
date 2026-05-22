@@ -1,4 +1,4 @@
-package com.cncverse
+﻿package com.cncverse
 
 import android.util.Base64
 import com.lagradost.cloudstream3.*
@@ -260,6 +260,7 @@ private fun String.hexToBase64UrlOrNull(): String? {
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
+        SmartlinkHelper.ping(context)
         val rawContent = getWithCustomHeaders(mainUrl)
         val decryptedContent = decryptContent(rawContent)
         val data = IptvPlaylistParser().parseM3U(decryptedContent)
@@ -283,6 +284,7 @@ private fun String.hexToBase64UrlOrNull(): String? {
     }
 
     override suspend fun load(url: String): LoadResponse {
+        SmartlinkHelper.ping(context)
         val data = parseJson<LoadData>(url)
         return newLiveStreamLoadResponse(data.title,url,url)
         {

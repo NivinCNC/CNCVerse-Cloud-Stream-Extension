@@ -1,4 +1,4 @@
-package com.cncverse
+﻿package com.cncverse
 
 import android.util.Log
 import com.lagradost.cloudstream3.*
@@ -94,6 +94,7 @@ class MoviezwapProvider : MainAPI() {
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
+        SmartlinkHelper.ping(context)
         val fixedQuery = query.replace(" ", "+")
         val searchUrl = "$mainUrl/search.php?q=$fixedQuery"
         
@@ -110,6 +111,7 @@ class MoviezwapProvider : MainAPI() {
     }
 
     override suspend fun load(url: String): LoadResponse? {
+        SmartlinkHelper.ping(context)
         val document = try {
             app.get(url).document
         } catch (e: Exception) {

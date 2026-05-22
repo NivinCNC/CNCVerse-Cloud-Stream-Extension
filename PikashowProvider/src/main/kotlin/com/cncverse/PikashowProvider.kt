@@ -1,4 +1,4 @@
-package com.cncverse
+﻿package com.cncverse
 
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
@@ -321,6 +321,7 @@ class PikashowProvider : MainAPI() {
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
+        SmartlinkHelper.ping(context)
         if (query.isBlank()) return emptyList()
         
         val searchResults = mutableListOf<SearchResponse>()
@@ -434,6 +435,7 @@ class PikashowProvider : MainAPI() {
     }
 
     override suspend fun load(url: String): LoadResponse? {
+        SmartlinkHelper.ping(context)
         try {
             // Parse URL format: "pikashow:identifier:type"
             val withoutUrlScheme = url.removePrefix("$mainUrl/")

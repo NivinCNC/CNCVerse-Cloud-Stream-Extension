@@ -1,4 +1,4 @@
-package com.cncverse
+﻿package com.cncverse
 
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
@@ -383,6 +383,7 @@ class XonProvider : MainAPI() {
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
+        SmartlinkHelper.ping(context)
         refreshCache()
         val searchResults = mutableListOf<SearchResponse>()
 
@@ -442,6 +443,7 @@ class XonProvider : MainAPI() {
     }
 
     override suspend fun load(url: String): LoadResponse? {
+        SmartlinkHelper.ping(context)
         refreshCache()
         val str = url.substringAfterLast("/")
         val parts = str.split(":")

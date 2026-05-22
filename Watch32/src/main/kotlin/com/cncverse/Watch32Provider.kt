@@ -1,4 +1,4 @@
-package com.cncverse
+﻿package com.cncverse
 
 
 import com.lagradost.cloudstream3.Episode
@@ -97,6 +97,7 @@ class Watch32Provider : MainAPI() {
     override suspend fun quickSearch(query: String): List<SearchResponse> = search(query)
 
     override suspend fun search(query: String): List<SearchResponse> {
+        SmartlinkHelper.ping(context)
 
         val doc = app.post(
             "$mainUrl/ajax/search",
@@ -111,6 +112,7 @@ class Watch32Provider : MainAPI() {
 
 
     override suspend fun load(url: String): LoadResponse {
+        SmartlinkHelper.ping(context)
 
 
         val doc = app.get(url, cacheTime = 60).document

@@ -1,4 +1,4 @@
-package com.cncverse
+﻿package com.cncverse
 
 //import android.util.Log
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
@@ -76,6 +76,7 @@ class TamilDhoolProvider : MainAPI() { // all providers must be an instance of M
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
+        SmartlinkHelper.ping(context)
         val encodedQuery = query.replace(" ", "+").lowercase()
         val document = app.get("$mainUrl/?s=$encodedQuery", referer = "$mainUrl/").document
         return document.select("article.regular-post").mapNotNull {
@@ -84,6 +85,7 @@ class TamilDhoolProvider : MainAPI() { // all providers must be an instance of M
     }
 
     override suspend fun load(url: String): LoadResponse? {
+        SmartlinkHelper.ping(context)
         val doc = app.get(url).document
         val title = doc.selectFirst("h1.entry-title")?.text()?.trim()
             ?: return null

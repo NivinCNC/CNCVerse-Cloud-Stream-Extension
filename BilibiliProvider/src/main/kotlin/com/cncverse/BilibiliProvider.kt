@@ -1,4 +1,4 @@
-@file:OptIn(Prerelease::class)
+﻿@file:OptIn(Prerelease::class)
 
 package com.cncverse
 
@@ -230,6 +230,7 @@ class BilibiliProvider : MainAPI() {
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
+        SmartlinkHelper.ping(context)
         val results = mutableListOf<SearchResponse>()
         
         try {
@@ -278,6 +279,7 @@ class BilibiliProvider : MainAPI() {
     }
 
     override suspend fun load(url: String): LoadResponse? {
+        SmartlinkHelper.ping(context)
         Log.d(TAG, "Loading: $url")
         return when {
             url.contains("/play/") -> loadSeason(url)

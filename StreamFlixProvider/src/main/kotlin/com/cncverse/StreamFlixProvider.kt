@@ -1,4 +1,4 @@
-package com.cncverse
+﻿package com.cncverse
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.lagradost.cloudstream3.*
@@ -194,6 +194,7 @@ class StreamFlixProvider : MainAPI() {
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
+        SmartlinkHelper.ping(context)
         val searchResults = mutableListOf<SearchResponse>()
         
         try {
@@ -250,6 +251,7 @@ class StreamFlixProvider : MainAPI() {
     }
 
     override suspend fun load(url: String): LoadResponse {
+        SmartlinkHelper.ping(context)
         val str = url.substringAfter("https://api.streamflix.app/")
         val (movieKey, type) = str.split("|")
         

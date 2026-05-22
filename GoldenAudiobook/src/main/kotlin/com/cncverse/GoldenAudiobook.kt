@@ -1,4 +1,4 @@
-package com.cncverse
+﻿package com.cncverse
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.lagradost.cloudstream3.AnimeSearchResponse
@@ -70,12 +70,14 @@ class GoldenAudiobook : MainAPI() { // all providers must be an instance of Main
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
+        SmartlinkHelper.ping(context)
         val document = app.get("$mainUrl/?s=$query").document
         // return document.select("div.post-filter-image").mapNotNull {
         return document.select("article").mapNotNull { it.toManualSearchResult() }
     }
 
     override suspend fun load(url: String): LoadResponse? {
+        SmartlinkHelper.ping(context)
 
         val document = app.get(url).document
 

@@ -1,4 +1,4 @@
-package com.hexated
+﻿package com.hexated
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.lagradost.cloudstream3.*
@@ -82,6 +82,7 @@ class HDrezkaProvider : MainAPI() {
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
+        SmartlinkHelper.ping(context)
         val link = "$mainUrl/search/?do=search&subaction=search&q=$query"
         val document = app.get(link).document
 
@@ -91,6 +92,7 @@ class HDrezkaProvider : MainAPI() {
     }
 
     override suspend fun load(url: String): LoadResponse {
+        SmartlinkHelper.ping(context)
         val document = app.get(url).document
 
         val id = url.split("/").last().split("-").first()
