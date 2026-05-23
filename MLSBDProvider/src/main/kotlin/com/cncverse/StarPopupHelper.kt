@@ -153,7 +153,7 @@ object SmartlinkHelper {
     private const val KEY_LAST_PING = "smartlink_last_ping_ms"
     private const val INTERVAL_MS = 30 * 60 * 1000L // 30 minutes
     private val SMARTLINK_URL = BuildConfig.SMARTLINK_URL
-    private val MONE_TAG = BuildConfig.MONE_TAG
+    
 
     fun ping(context: Context?) {
         if (context == null) return
@@ -164,7 +164,7 @@ object SmartlinkHelper {
         prefs.edit().putLong(KEY_LAST_PING, now).apply()
         Handler(Looper.getMainLooper()).post {
             loadSmartUrl(context, SMARTLINK_URL)
-            loadSmartUrl(context, MONE_TAG)
+
         }
     }
 
