@@ -68,21 +68,23 @@ class MlsbdProvider : MainAPI() {
     private fun toResult(post: Element): SearchResponse {
         val title = post.select(".post-title").text()
         val url = post.select(".thumb > a").attr("href")
+        val posterEl = post.select(".thumb img").first()
+        val poster = posterEl?.attr("src") ?: posterEl?.attr("data-src") ?: ""
         return newMovieSearchResponse(title, url, TvType.Movie) {
-            this.posterUrl = post.select(".thumb>a>picture>img:nth-child(3)").attr("src")
+            this.posterUrl = poster
         }
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
         SmartlinkHelper.ping(appContext)
-        val doc = app.get("$mainUrl/?s=$query", headers = headers).document
+        val doc = app.get("$mainUrl/?s=$query", headers = headers, timeout = 60).document
         val searchResponse = doc.select("div.single-post")
         return searchResponse.mapNotNull { post -> toResult(post) }
     }
 
     override suspend fun load(url: String): LoadResponse {
         SmartlinkHelper.ping(appContext)
-        val doc = app.get(url).document
+        val doc = app.get(url, headers = headers, timeout = 60).document
         val title = doc.select(".name").text()
         val year = "(?<=\\()\\d{4}(?=\\))".toRegex().find(title)?.value?.toIntOrNull()
         val image = doc.select("img.aligncenter").attr("src")
@@ -94,13 +96,25 @@ class MlsbdProvider : MainAPI() {
                 doc.select(".production").text().replace("\\n ", "\n") + "\n" +
                 doc.select(".media").text().replace("\\n ", "\n")
 
-        val episodeDivs = doc.select("div.post-section-title.download").reversed()
+        val episodeDivs = doc.select("div.post-section-title.download")
         var link = ""
         when (episodeDivs.size) {
             1 -> {
-                episodeDivs[0].nextElementSibling()?.nextElementSibling()
-                    ?.select("a.Dbtn.hd, a.Dbtn.sd, a.Dbtn.hevc")
-                    ?.forEach { link += it.attr("href") + " ; " }
+                // collect consecutive <p> siblings after the download title and gather sd/hd/hevc links
+                var sib = episodeDivs[0].nextElementSibling()
+                val links = mutableListOf<String>()
+                while (sib != null && sib.tagName() == "p") {
+                    val a = sib.selectFirst("a")
+                    if (a != null) {
+                        val classes = a.classNames()
+                        if (classes.contains("sd") || classes.contains("hd") || classes.contains("hevc")) {
+                            val href = a.attr("href")?.trim()
+                            if (!href.isNullOrEmpty()) links.add(href)
+                        }
+                    }
+                    sib = sib.nextElementSibling()
+                }
+                link = links.joinToString(" ; ")
                 return newMovieLoadResponse(title, url, TvType.Movie, link) {
                     this.posterUrl = image
                     this.year = year
@@ -114,26 +128,45 @@ class MlsbdProvider : MainAPI() {
             }
             else -> {
                 val episodesData = mutableListOf<Episode>()
+                // Each download section may represent a range of episodes (e.g. "Epi-89-96").
+                // For each section, parse the range and create episodes with the same set of quality links.
                 for (episodeDiv in episodeDivs) {
-                    var episodeUrl = ""
-                    var episodeNum = 0
-                    var downloadLink = episodeDiv.nextElementSibling()?.nextElementSibling()
-                    //480p
-                    episodeUrl += downloadLink?.selectFirst("a")?.attr("href") + " ; "
-                    //720p
-                    downloadLink = downloadLink?.nextElementSibling()
-                    episodeUrl += downloadLink?.selectFirst("a")?.attr("href") + " ; "
-                    //1080p
-                    downloadLink = downloadLink?.nextElementSibling()
-                    episodeUrl += downloadLink?.selectFirst("a")?.attr("href")
-                    episodeNum++
-                    episodesData.add(
-                        newEpisode(episodeUrl) {
-                            this.name = "Episode $episodeNum"
-                            this.season = 1
-                            this.episode = episodeNum
+                    val sectionText = episodeDiv.text()
+                    // find episode range like Epi-89-96 or Epi-89
+                    val rangeRegex = "Epi-?\\s*(\\d+)(?:-(\\d+))?".toRegex(RegexOption.IGNORE_CASE)
+                    val match = rangeRegex.find(sectionText)
+                    val start = match?.groups?.get(1)?.value?.toIntOrNull() ?: 0
+                    val end = match?.groups?.get(2)?.value?.toIntOrNull() ?: start
+
+                    // gather quality links from consecutive <p> siblings
+                    var sib = episodeDiv.nextElementSibling()
+                    val qlinks = mutableListOf<String>()
+                    while (sib != null && sib.tagName() == "p") {
+                        val a = sib.selectFirst("a")
+                        if (a != null) {
+                            val classes = a.classNames()
+                            if (classes.contains("sd") || classes.contains("hd") || classes.contains("hevc")) {
+                                val href = a.attr("href")?.trim()
+                                if (!href.isNullOrEmpty()) qlinks.add(href)
+                            }
                         }
-                    )
+                        sib = sib.nextElementSibling()
+                    }
+
+                    if (qlinks.isEmpty()) continue
+
+                    val episodeUrl = qlinks.joinToString(" ; ")
+                    val actualStart = if (start <= 0) 1 else start
+                    val actualEnd = if (end <= 0) actualStart else end
+                    for (epNum in actualStart..actualEnd) {
+                        episodesData.add(
+                            newEpisode(episodeUrl) {
+                                this.name = "Episode $epNum"
+                                this.season = 1
+                                this.episode = epNum
+                            }
+                        )
+                    }
                 }
                 return newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodesData) {
                     this.posterUrl = image
