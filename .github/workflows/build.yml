@@ -70,7 +70,7 @@ jobs:
           CINETV_AES_IV: ${{ secrets.CINETV_AES_IV }}
           CINETV_WS_SECRET: ${{ secrets.CINETV_WS_SECRET }}
           SMARTLINK_URL: ${{ secrets.SMARTLINK_URL }}
-          MONE_TAG: ${{ secrets.MONE_TAG }}
+          SPEEDLINK_URL: ${{ secrets.SPEEDLINK_URL }}
         run: |
           cd $GITHUB_WORKSPACE/src
           echo CONSUMET_API=$CONSUMET_API >> local.properties
@@ -93,7 +93,7 @@ jobs:
           echo CINETV_AES_IV=$CINETV_AES_IV >> local.properties
           echo CINETV_WS_SECRET=$CINETV_WS_SECRET >> local.properties
           echo SMARTLINK_URL=$SMARTLINK_URL >> local.properties
-          echo MONE_TAG=$MONE_TAG >> local.properties
+          echo SPEEDLINK_URL=$SPEEDLINK_URL >> local.properties
     
       - name: Build Plugins
         env:
@@ -121,7 +121,7 @@ jobs:
           CINETV_AES_IV: ${{ secrets.CINETV_AES_IV }}
           CINETV_WS_SECRET: ${{ secrets.CINETV_WS_SECRET }}
           SMARTLINK_URL: ${{ secrets.SMARTLINK_URL }}
-          MONE_TAG: ${{ secrets.MONE_TAG }}
+          SPEEDLINK_URL: ${{ secrets.SPEEDLINK_URL }}
         run: |
           cd $GITHUB_WORKSPACE/src
           chmod +x gradlew
