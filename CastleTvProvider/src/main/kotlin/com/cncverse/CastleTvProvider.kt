@@ -370,7 +370,7 @@ class CastleTvProvider : MainAPI() {
     }
 
     override suspend fun search(query: String): List<com.lagradost.cloudstream3.SearchResponse> {
-        SmartlinkHelper.ping(context)
+        
         return try {
             if (query.isBlank()) return emptyList()           
             val securityKey = getSecurityKey() ?: return emptyList()          
@@ -420,7 +420,7 @@ class CastleTvProvider : MainAPI() {
     }
 
     override suspend fun load(url: String): LoadResponse? {
-        SmartlinkHelper.ping(context)
+        
         return try {
             val movieId = url.substringAfterLast('/')
             

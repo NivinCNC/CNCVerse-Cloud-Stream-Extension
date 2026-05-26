@@ -605,7 +605,7 @@ class DoFlixProvider : MainAPI() {
     }
 
     override suspend fun search(query: String): List<com.lagradost.cloudstream3.SearchResponse> {
-        SmartlinkHelper.ping(context)
+        
         val searchResults = mutableListOf<com.lagradost.cloudstream3.SearchResponse>()
         
         // Search movies
@@ -648,7 +648,7 @@ class DoFlixProvider : MainAPI() {
     }
 
     override suspend fun load(url: String): LoadResponse? {
-        SmartlinkHelper.ping(context)
+        
             val parts = if (url.startsWith("https")) {
                 val path = url.substringAfter("https://").substringAfter("/")
                 path.split(",")

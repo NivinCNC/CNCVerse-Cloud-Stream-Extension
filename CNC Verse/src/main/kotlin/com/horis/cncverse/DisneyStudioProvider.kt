@@ -109,7 +109,7 @@ open class DisneyStudioProvider(
 //    }
 
     override suspend fun load(url: String): LoadResponse? {
-        SmartlinkHelper.ping(context)
+        
         cookie_value = if (cookie_value.isEmpty()) bypass(mainUrl) else cookie_value
         val id = parseJson<Id>(url).id
         val data = app.get(

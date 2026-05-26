@@ -195,7 +195,7 @@ class PlayZTVLiveEventsProvider : MainAPI() {
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
-        SmartlinkHelper.ping(context)
+        
         return PlayZTVProviderManager.fetchLiveEvents()
             .filter { event ->
                 listOfNotNull(
@@ -220,7 +220,7 @@ class PlayZTVLiveEventsProvider : MainAPI() {
     }
 
     override suspend fun load(url: String): LoadResponse {
-        SmartlinkHelper.ping(context)
+        
         val data = parseJson<LiveEventLoadData>(url)
         val info = data.eventInfo
         val plot = buildString {

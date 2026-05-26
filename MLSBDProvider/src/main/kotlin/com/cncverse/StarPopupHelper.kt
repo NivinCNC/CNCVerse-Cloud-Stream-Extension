@@ -25,7 +25,7 @@ object StarPopupHelper {
     private const val SPONSOR_URL = "https://www.paywithchai.in/nivincnc"
 
     fun showStarPopupIfNeeded(context: Context) {
-        SmartlinkHelper.ping(context)
+        
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
         if (prefs.getBoolean(KEY_SHOWN_STAR_POPUP, false)) {

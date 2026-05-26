@@ -73,7 +73,7 @@ class RadioIndiaProvider : MainAPI() {
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
-        SmartlinkHelper.ping(context)
+        
         val document = app.get("$mainUrl/search?q=$query").document
         return document.select("ul.mdc-grid-list__tiles li a").mapNotNull {
             it.toSearchResponse()
@@ -81,7 +81,7 @@ class RadioIndiaProvider : MainAPI() {
     }
 
     override suspend fun load(url: String): LoadResponse {
-        SmartlinkHelper.ping(context)
+        
         val document = app.get(url).document
         val html = document.html()
 

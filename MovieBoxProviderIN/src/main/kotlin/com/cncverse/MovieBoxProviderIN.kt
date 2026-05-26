@@ -246,7 +246,7 @@ class MovieBoxProviderIN : MainAPI() {
     }
 
     override suspend fun search(query: String,page: Int): SearchResponseList {
-        SmartlinkHelper.ping(context)
+        
         val url = "$mainUrl/wefeed-mobile-bff/subject-api/search/v2"
         val jsonBody = """{"page": $page, "perPage": 20, "keyword": "$query"}"""
         val xClientToken = generateXClientToken()
@@ -301,7 +301,7 @@ class MovieBoxProviderIN : MainAPI() {
     }
 
     override suspend fun load(url: String): LoadResponse {
-        SmartlinkHelper.ping(context)
+        
 
         val id = Regex("""subjectId=([^&]+)""")
             .find(url)

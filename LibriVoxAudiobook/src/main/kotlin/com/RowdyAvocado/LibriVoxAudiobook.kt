@@ -71,7 +71,7 @@ class LibriVoxAudiobook : MainAPI() { // all providers must be an instance of Ma
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
-        SmartlinkHelper.ping(context)
+        
         val reqlink = "https://librivox.org/api/feed/audiobooks/?title=$query&format=json"
 
         val jason = app.get(reqlink).parsed<BookList>()
@@ -85,7 +85,7 @@ class LibriVoxAudiobook : MainAPI() { // all providers must be an instance of Ma
     }
 
     override suspend fun load(url: String): LoadResponse? {
-        SmartlinkHelper.ping(context)
+        
 
         val document = app.get(url).document
 

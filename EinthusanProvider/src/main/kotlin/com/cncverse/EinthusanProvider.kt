@@ -77,7 +77,7 @@ class EinthusanProvider : MainAPI() { // all providers must be an instance of Ma
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
-        SmartlinkHelper.ping(context)
+        
         val fixedQuery = query.replace(" ", "+")
         val resultTamil = app.get("$mainUrl/movie/results/?lang=tamil&query=$fixedQuery").document.select("#UIMovieSummary > ul > li").mapNotNull {
             it.toSearchResult()
@@ -117,7 +117,7 @@ class EinthusanProvider : MainAPI() { // all providers must be an instance of Ma
     }
 
     override suspend fun load(url: String): LoadResponse? {
-        SmartlinkHelper.ping(context)
+        
         val doc = app.get(url).document
         //Log.d("Doc", doc.toString())
         val title = doc.select("#UIMovieSummary > ul > li > div.block2 > a.title > h3").text().trim().ifEmpty { return null }

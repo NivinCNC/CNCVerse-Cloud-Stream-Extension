@@ -108,7 +108,7 @@ class RtallyProvider : MainAPI() {
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
-        SmartlinkHelper.ping(context)
+        
         val doc = app.get(
             "$mainUrl/search/$query",
             cacheTime = 60,
@@ -118,7 +118,7 @@ class RtallyProvider : MainAPI() {
     }
 
     override suspend fun load(url: String): LoadResponse {
-        SmartlinkHelper.ping(context)
+        
         val doc = app.get(
             url,
             cacheTime = 60,

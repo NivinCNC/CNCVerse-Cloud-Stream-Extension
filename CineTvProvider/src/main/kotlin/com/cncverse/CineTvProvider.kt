@@ -571,7 +571,7 @@ class CineTvProvider : MainAPI() {
     }
     
     override suspend fun search(query: String): List<SearchResponse> {
-        SmartlinkHelper.ping(context)
+        
         if (query.isBlank()) return emptyList()
         
         val searchResponse = searchVod(query) ?: return emptyList()
@@ -614,7 +614,7 @@ class CineTvProvider : MainAPI() {
     }
     
     override suspend fun load(url: String): LoadResponse? {
-        SmartlinkHelper.ping(context)
+        
         // URL format: "vodId,typePid" (e.g., "542795,1" for movie or "249461,2" for series)
         val parts = url.split(",")
         if (parts.size != 2) return null
