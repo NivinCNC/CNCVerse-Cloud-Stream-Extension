@@ -76,14 +76,12 @@ class MlsbdProvider : MainAPI() {
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
-        SmartlinkHelper.ping(appContext)
         val doc = app.get("$mainUrl/?s=$query", headers = headers, timeout = 60).document
         val searchResponse = doc.select("div.single-post")
         return searchResponse.mapNotNull { post -> toResult(post) }
     }
 
     override suspend fun load(url: String): LoadResponse {
-        SmartlinkHelper.ping(appContext)
         val doc = app.get(url, headers = headers, timeout = 60).document
         val title = doc.select(".name").text()
         val year = "(?<=\\()\\d{4}(?=\\))".toRegex().find(title)?.value?.toIntOrNull()

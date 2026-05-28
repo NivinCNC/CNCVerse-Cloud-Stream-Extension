@@ -264,4 +264,3 @@ object StarPopupHelper {
         return Color.argb(alpha, Color.red(color), Color.green(color), Color.blue(color))
     }
 }
-
