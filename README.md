@@ -6,6 +6,12 @@ If you find this project helpful, consider supporting its development! (UPI Supp
 
 Your support helps keep this project alive and enables continued maintanance of providers addition of new providers.
 
+### 💬 Community
+
+Join our Telegram group to discuss extensions, request features, or report issues:  
+
+[![Join us on Telegram](https://img.shields.io/badge/Telegram-Join%20Group-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/+_RoclN7IrQ44NGQ1)
+
 ### 🕹 Tools and Programming languages used :
 <p align="left">
   <a href="https://skillicons.dev">
