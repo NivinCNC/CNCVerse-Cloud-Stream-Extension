@@ -14,7 +14,7 @@ buildscript {
 
     dependencies {
         classpath("com.android.tools.build:gradle:8.13.2")
-        classpath("com.github.recloudstream:gradle:-SNAPSHOT")
+        classpath("com.github.recloudstream.gradle:gradle:81b1d424d")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.3.0")
     }
 }
@@ -86,6 +86,9 @@ subprojects {
             buildConfigField("String", "SKTECH_FIREBASE_API_KEY", "\"${getSecret("SKTECH_FIREBASE_API_KEY")}\"")
             buildConfigField("String", "SKTECH_FIREBASE_APP_ID", "\"${getSecret("SKTECH_FIREBASE_APP_ID")}\"")
             buildConfigField("String", "SKTECH_FIREBASE_PROJECT_NUMBER", "\"${getSecret("SKTECH_FIREBASE_PROJECT_NUMBER")}\"")
+            buildConfigField("String", "XON_FIREBASE_API_KEY", "\"${getSecret("XON_FIREBASE_API_KEY")}\"")
+            buildConfigField("String", "XON_FIREBASE_APP_ID", "\"${getSecret("XON_FIREBASE_APP_ID")}\"")
+            buildConfigField("String", "XON_FIREBASE_PROJECT_NUMBER", "\"${getSecret("XON_FIREBASE_PROJECT_NUMBER")}\"")
             buildConfigField("String", "CINETV_SECRET_KEY_ENCRYPTED", "\"${getSecret("CINETV_SECRET_KEY_ENCRYPTED")}\"")
             buildConfigField("String", "CINETV_DES_KEY", "\"${getSecret("CINETV_DES_KEY")}\"")
             buildConfigField("String", "CINETV_DES_IV", "\"${getSecret("CINETV_DES_IV")}\"")

@@ -1,9 +1,10 @@
-﻿package com.cncverse
+package com.cncverse
 
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.utils.newExtractorLink
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import kotlinx.coroutines.*
@@ -16,7 +17,7 @@ class XonProvider : MainAPI() {
         var context: android.content.Context? = null
     }
     
-    override var mainUrl = "http://myavens18052002.xyz/nzapis"
+    override var mainUrl = "https://xon-avens.xyz/apis"
     override var name = "Xon"
     override val hasMainPage = true
     override var lang = "ta"
@@ -27,496 +28,384 @@ class XonProvider : MainAPI() {
     )
 
     private var apiKey = "553y845hfhdlfhjkl438943943839443943fdhdkfjfj9834lnfd98"
-    private var authToken: String? = null
-    private var authExpireTime = 0L
+    private var callerName = "vion-official-app"
+    private var configExpireTime = 0L
+    private var configFetched = false
     
     private fun getHeaders(): Map<String, String> {
+        val host = try {
+            java.net.URI(mainUrl).host ?: "xon-avens.xyz"
+        } catch (_: Exception) { "xon-avens.xyz" }
         return mapOf(
-            "api" to apiKey,
-            "Cache-Control" to "no-cache",
-            "caller" to "vion-official-app",
+            "Accept-Encoding" to "gzip",
+            "API" to apiKey,
+            "CALLER" to callerName,
             "Connection" to "Keep-Alive",
-            "Host" to "myavens18052002.xyz",
-            "User-Agent" to "okhttp/3.14.9"
+            "Host" to host,
+            "User-Agent" to "okhttp/5.3.2"
         )
     }
 
     private val mapper = jacksonObjectMapper()
+        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
-    // Cache variables
-    private var cachedLanguages: List<Language> = emptyList()
-    private var cachedShows: List<Show> = emptyList()
-    private var cachedSeasons: List<Season> = emptyList()
-    private var cachedEpisodes: List<Episode> = emptyList()
-    private var cachedMovies: List<Movie> = emptyList()
-    private var lastCacheTime = 0L
-    private val cacheRefreshInterval = 24 * 60 * 60 * 1000L // 24 hours
+    // ─── Data classes matching current API responses ───────────────────────────
 
-    // Data classes for API responses
-    data class FirebaseAuthResponse(
-        @JsonProperty("kind") val kind: String?,
-        @JsonProperty("idToken") val idToken: String,
-        @JsonProperty("refreshToken") val refreshToken: String,
-        @JsonProperty("expiresIn") val expiresIn: String,
-        @JsonProperty("localId") val localId: String
-    )
-
-    data class FirebaseSettingsResponse(
-        @JsonProperty("name") val name: String?,
-        @JsonProperty("fields") val fields: Map<String, Map<String, String>>,
-        @JsonProperty("createTime") val createTime: String?,
-        @JsonProperty("updateTime") val updateTime: String?
-    )
-
-    data class Language(
-        @JsonProperty("id") val id: Int,
-        @JsonProperty("no") val no: Int,
-        @JsonProperty("name") val name: String,
-        @JsonProperty("audio") val audio: String
-    )
-
-    data class Show(
-        @JsonProperty("id") val id: Int,
-        @JsonProperty("no") val no: Int,
-        @JsonProperty("name") val name: String,
-        @JsonProperty("thumb") val thumb: String,
-        @JsonProperty("cover") val cover: String,
-        @JsonProperty("des") val des: String,
-        @JsonProperty("language") val language: Int,
-        @JsonProperty("backup_img") val backupImg: String,
-        @JsonProperty("locked") val locked: Int
-    )
-
-    data class Season(
-        @JsonProperty("id") val id: Int,
-        @JsonProperty("no") val no: Int,
-        @JsonProperty("name") val name: String,
-        @JsonProperty("thumb") val thumb: String,
-        @JsonProperty("cover") val cover: String,
-        @JsonProperty("genre") val genre: String?,
-        @JsonProperty("des") val des: String?,
-        @JsonProperty("type") val type: String,
-        @JsonProperty("link") val link: String?,
-        @JsonProperty("ongoing") val ongoing: Int,
-        @JsonProperty("trending") val trending: Int,
-        @JsonProperty("language") val language: Int,
-        @JsonProperty("show_id") val showId: Int,
-        @JsonProperty("block_ads") val blockAds: Int,
-        @JsonProperty("backup_img") val backupImg: String?,
-        @JsonProperty("ttype") val ttype: Int,
-        @JsonProperty("trailer") val trailer: String?,
-        @JsonProperty("rating") val rating: String?,
-        @JsonProperty("series") val series: String?,
-        @JsonProperty("season") val season: String?,
-        @JsonProperty("locked") val locked: Int
-    )
-
-    data class Episode(
-        @JsonProperty("id") val id: Int,
-        @JsonProperty("no") val no: Int,
-        @JsonProperty("name") val name: String,
-        @JsonProperty("thumb") val thumb: String,
-        @JsonProperty("cover") val cover: String,
-        @JsonProperty("des") val des: String,
-        @JsonProperty("tags") val tags: String,
-        @JsonProperty("type") val type: String,
-        @JsonProperty("link") val link: String,
-        @JsonProperty("basic") val basic: String,
-        @JsonProperty("sd") val sd: String,
-        @JsonProperty("hd") val hd: String,
-        @JsonProperty("fhd") val fhd: String,
-        @JsonProperty("season_id") val seasonId: Int,
-        @JsonProperty("show_id") val showId: Int,
-        @JsonProperty("language") val language: Int,
-        @JsonProperty("premium") val premium: Int,
-        @JsonProperty("wfeathers") val wfeathers: Int,
-        @JsonProperty("bfeathers") val bfeathers: Int,
-        @JsonProperty("sfeathers") val sfeathers: Int,
-        @JsonProperty("block_ads") val blockAds: Int,
-        @JsonProperty("trending") val trending: Int,
-        @JsonProperty("eplay") val eplay: String,
-        @JsonProperty("backup_img") val backupImg: String,
-        @JsonProperty("locked") val locked: Int,
-        @JsonProperty("updated_at") val updatedAt: String
-    )
-
-    data class EpisodesResponse(
-        @JsonProperty("current_time") val currentTime: String,
-        @JsonProperty("episodes") val episodes: List<Episode>
-    )
-
+    /**
+     * Represents an entry from nzgetshows.php.
+     * This endpoint now returns MOVIES (not TV seasons).
+     * The "show_name" / "language_name" fields carry embedded metadata.
+     */
     data class Movie(
         @JsonProperty("id") val id: Int,
         @JsonProperty("no") val no: Int,
         @JsonProperty("name") val name: String,
-        @JsonProperty("thumb") val thumb: String,
-        @JsonProperty("cover") val cover: String,
-        @JsonProperty("genre") val genre: String,
-        @JsonProperty("des") val des: String,
-        @JsonProperty("tags") val tags: String,
-        @JsonProperty("type") val type: String,
-        @JsonProperty("link") val link: String,
-        @JsonProperty("trailer") val trailer: String,
-        @JsonProperty("ttype") val ttype: Int,
-        @JsonProperty("basic") val basic: String,
-        @JsonProperty("sd") val sd: String,
-        @JsonProperty("hd") val hd: String,
-        @JsonProperty("fhd") val fhd: String,
-        @JsonProperty("show_id") val showId: Int,
-        @JsonProperty("language") val language: Int,
-        @JsonProperty("premium") val premium: Int,
-        @JsonProperty("wfeathers") val wfeathers: Int,
-        @JsonProperty("bfeathers") val bfeathers: Int,
-        @JsonProperty("sfeathers") val sfeathers: Int,
-        @JsonProperty("block_ads") val blockAds: Int,
-        @JsonProperty("trending") val trending: Int,
-        @JsonProperty("special") val special: Int,
-        @JsonProperty("eplay") val eplay: String,
-        @JsonProperty("backup_img") val backupImg: String,
-        @JsonProperty("locked") val locked: Int
+        // New API uses "poster" instead of "thumb"
+        @JsonProperty("poster") val poster: String? = null,
+        @JsonProperty("cover") val cover: String? = null,
+        @JsonProperty("genre") val genre: String? = null,
+        @JsonProperty("des") val des: String? = null,
+        @JsonProperty("tags") val tags: String? = null,
+        @JsonProperty("type") val type: String? = null,
+        @JsonProperty("trailer") val trailer: String? = null,
+        @JsonProperty("ttype") val ttype: Int = 0,
+        @JsonProperty("basic") val basic: String? = null,
+        @JsonProperty("sd") val sd: String? = null,
+        @JsonProperty("hd") val hd: String? = null,
+        @JsonProperty("fhd") val fhd: String? = null,
+        @JsonProperty("show_id") val showId: Int = 0,
+        @JsonProperty("language") val language: Int = 0,
+        @JsonProperty("show_name") val showName: String? = null,
+        @JsonProperty("language_name") val languageName: String? = null,
+        @JsonProperty("premium") val premium: Int = 0,
+        @JsonProperty("wfeathers") val wfeathers: Int = 0,
+        @JsonProperty("bfeathers") val bfeathers: Int = 0,
+        @JsonProperty("sfeathers") val sfeathers: Int = 0,
+        @JsonProperty("trending") val trending: Int = 0,
+        @JsonProperty("special") val special: Int = 0,
+        @JsonProperty("xPlayer2") val xPlayer2: String? = null,
+        @JsonProperty("xPlayer3") val xPlayer3: String? = null,
+        @JsonProperty("locked") val locked: Int = 0,
+        @JsonProperty("rating") val rating: String? = null,
+        @JsonProperty("avg_runtime") val avgRuntime: String? = null,
+        @JsonProperty("age_rating") val ageRating: String? = null,
+        @JsonProperty("top10") val top10: Int = 0,
+        @JsonProperty("play_code") val playCode: String? = null,
+        @JsonProperty("created_at") val createdAt: String? = null,
+        @JsonProperty("updated_at") val updatedAt: String? = null
     )
 
-    private suspend fun authenticateAndGetSettings() {
+    data class MoviesResponse(
+        @JsonProperty("status") val status: Boolean = false,
+        @JsonProperty("last_updated") val lastUpdated: String = "",
+        @JsonProperty("movies") val movies: List<Movie> = emptyList()
+    )
+
+    /**
+     * Represents an entry from nzgetepisodes_v2.php.
+     * Fields like aplayer1/aplayer2 replace old eplay/link.
+     * showName, languageName, season_name are now embedded.
+     */
+    data class Episode(
+        @JsonProperty("id") val id: Int,
+        @JsonProperty("no") val no: Int,
+        @JsonProperty("name") val name: String,
+        @JsonProperty("thumb") val thumb: String? = null,
+        @JsonProperty("cover") val cover: String? = null,
+        @JsonProperty("des") val des: String? = null,
+        @JsonProperty("tags") val tags: String? = null,
+        @JsonProperty("type") val type: String? = null,
+        @JsonProperty("basic") val basic: String? = null,
+        @JsonProperty("sd") val sd: String? = null,
+        @JsonProperty("hd") val hd: String? = null,
+        @JsonProperty("fhd") val fhd: String? = null,
+        @JsonProperty("season_id") val seasonId: Int = 0,
+        @JsonProperty("show_id") val showId: Int = 0,
+        @JsonProperty("language") val language: Int = 0,
+        @JsonProperty("premium") val premium: Int = 0,
+        @JsonProperty("wfeathers") val wfeathers: Int = 0,
+        @JsonProperty("bfeathers") val bfeathers: Int = 0,
+        @JsonProperty("sfeathers") val sfeathers: Int = 0,
+        @JsonProperty("trending") val trending: Int = 0,
+        // New fields replacing old "eplay" / "link"
+        @JsonProperty("aplayer1") val aplayer1: String? = null,
+        @JsonProperty("aplayer2") val aplayer2: String? = null,
+        @JsonProperty("locked") val locked: Int = 0,
+        @JsonProperty("play_code") val playCode: String? = null,
+        // Embedded metadata (no need for separate shows/seasons lookup)
+        @JsonProperty("showName") val showName: String? = null,
+        @JsonProperty("languageName") val languageName: String? = null,
+        @JsonProperty("season_name") val seasonName: String? = null,
+        @JsonProperty("updated_at") val updatedAt: String? = null
+    )
+
+    data class EpisodesResponse(
+        @JsonProperty("episodes") val episodes: List<Episode> = emptyList()
+    )
+
+    // ─── Cache ─────────────────────────────────────────────────────────────────
+
+    private var cachedMovies: List<Movie> = emptyList()
+    private var cachedEpisodes: List<Episode> = emptyList()
+    private var lastCacheTime = 0L
+    private val cacheRefreshInterval = 24 * 60 * 60 * 1000L // 24 hours
+
+    // ─── Remote config ─────────────────────────────────────────────────────────
+
+    private suspend fun fetchRemoteConfig() {
         try {
-            // Step 1: Get Firebase authentication token
-            val authResponse = app.post(
-                "https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyAC__yhrI4ExLcqWbZjsLN33_gVgyp6w3A",
-                headers = mapOf("Content-Type" to "application/json"),
-                data = mapOf<String, String>()
-            )
-            
-            val authData = mapper.readValue<FirebaseAuthResponse>(authResponse.body.string())
-            authToken = authData.idToken
-            authExpireTime = System.currentTimeMillis() + (authData.expiresIn.toLongOrNull() ?: 3600) * 1000
-            
-            // Step 2: Get settings from Firestore using the auth token
-            val settingsResponse = app.get(
-                "https://firestore.googleapis.com/v1/projects/xon-app/databases/(default)/documents/settings/BvJwsNb0eaObbigSefkm",
-                headers = mapOf("Authorization" to "Bearer ${authData.idToken}")
-            )
-            
-            val settingsData = mapper.readValue<FirebaseSettingsResponse>(settingsResponse.body.string())
-            
-            // Update API key and base URL from settings
-            settingsData.fields["api"]?.get("stringValue")?.let { 
-                apiKey = it 
-            }
-            settingsData.fields["base"]?.get("stringValue")?.let { 
-                mainUrl = it.removeSuffix("/")
-            }
-            
+            val (baseUrl, fetchedApiKey, fetchedCallerName) = XonFirebaseRemoteConfigFetcher.getAllConfig()
+            baseUrl?.let { mainUrl = it }
+            fetchedApiKey?.let { apiKey = it }
+            fetchedCallerName?.let { callerName = it }
+            configFetched = true
+            configExpireTime = System.currentTimeMillis() + 3600 * 1000
         } catch (e: Exception) {
-            println("Xon Provider: Failed to authenticate - ${e.message}")
-            // Fall back to hardcoded values if authentication fails
+            println("Xon Provider: Failed to fetch remote config - ${e.message}")
         }
     }
 
+    // ─── Cache refresh ─────────────────────────────────────────────────────────
+
     suspend fun refreshCache() {
         val currentTime = System.currentTimeMillis()
-        
-        // Check if we need to re-authenticate
-        if (authToken == null || currentTime >= authExpireTime) {
-            authenticateAndGetSettings()
+
+        if (!configFetched || currentTime >= configExpireTime) {
+            fetchRemoteConfig()
         }
-        
+
         if (currentTime - lastCacheTime < cacheRefreshInterval &&
-            cachedLanguages.isNotEmpty() &&
-            cachedShows.isNotEmpty()) {
+            cachedMovies.isNotEmpty() &&
+            cachedEpisodes.isNotEmpty()
+        ) {
             return // Cache is still fresh
         }
 
         try {
             val headers = getHeaders()
-            
-            // Fetch languages
-            val languagesResponse = app.get("$mainUrl/nzgetlanguages.php", headers = headers)
-            cachedLanguages = mapper.readValue<List<Language>>(languagesResponse.body.string())
 
-            // Fetch shows
-            val showsResponse = app.get("$mainUrl/nzgetshows.php", headers = headers)
-            cachedShows = mapper.readValue<List<Show>>(showsResponse.body.string())
+            // nzgetshows.php now returns the movies list
+            val moviesRaw = app.get("$mainUrl/nzgetshows.php", headers = headers).body.string()
+            val moviesResponse = mapper.readValue<MoviesResponse>(moviesRaw)
+            cachedMovies = moviesResponse.movies
 
-            // Fetch seasons
-            val seasonsResponse = app.get("$mainUrl/nzgetseasons.php", headers = headers)
-            cachedSeasons = mapper.readValue<List<Season>>(seasonsResponse.body.string())
-
-            // Fetch episodes
-            val episodesResponse = app.get("$mainUrl/nzgetepisodes_v2.php?since=", headers = headers)
-            val episodesData = mapper.readValue<EpisodesResponse>(episodesResponse.body.string())
-            cachedEpisodes = episodesData.episodes
-
-            // Fetch movies
-            val moviesResponse = app.get("$mainUrl/nzgetmovies.php", headers = headers)
-            cachedMovies = mapper.readValue<List<Movie>>(moviesResponse.body.string())
+            // nzgetepisodes_v2.php returns episodes
+            val episodesRaw = app.get("$mainUrl/nzgetepisodes_v2.php", headers = headers).body.string()
+            val episodesResponse = mapper.readValue<EpisodesResponse>(episodesRaw)
+            cachedEpisodes = episodesResponse.episodes
 
             lastCacheTime = currentTime
         } catch (e: Exception) {
-            // Log error but don't crash
             println("Xon Provider: Failed to refresh cache - ${e.message}")
         }
     }
 
-    private fun getLanguageName(languageId: Int): String {
-        return cachedLanguages.find { it.id == languageId }?.name ?: "Unknown"
+    // ─── Helpers ───────────────────────────────────────────────────────────────
+
+    private fun formatUrl(url: String): String {
+        return if (url.startsWith("http://") || url.startsWith("https://")) url
+        else "https://archive.org/download/$url"
     }
 
-    private fun getShowName(showId: Int): String {
-        return cachedShows.find { it.id == showId }?.name ?: "Unknown Show"
-    }
-
-    private fun formatPosterUrl(url: String): String {
-        return if (url.startsWith("http://") || url.startsWith("https://")) {
-            url
-        } else {
-            "https://archive.org/download/$url"
+    /** Best poster image for a movie (poster → cover → fallback) */
+    private fun Movie.bestPoster(): String =
+        when {
+            !poster.isNullOrEmpty() -> formatUrl(poster)
+            !cover.isNullOrEmpty()  -> formatUrl(cover)
+            else                    -> ""
         }
-    }
+
+    /** Display name including language */
+    private fun Movie.displayName(): String =
+        if (!languageName.isNullOrEmpty()) "${name.orEmpty()} ($languageName)" else name.orEmpty()
+
+    private fun Episode.displayName(): String =
+        if (!showName.isNullOrEmpty() && !languageName.isNullOrEmpty())
+            "$showName – ${name.orEmpty()} ($languageName)"
+        else name.orEmpty()
+
+    // ─── Main page ─────────────────────────────────────────────────────────────
 
     override val mainPage = mainPageOf(
-        "languages_top" to "Languages",
-        "trending_shows" to "Trending Shows",
+        "trending"        to "Trending",
         "latest_episodes" to "Latest Episodes",
-        "movies" to "Movies"
+        "movies"          to "Movies"
     )
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
-        // Show star popup on first visit (shared across all CNCVerse plugins)
         context?.let { StarPopupHelper.showStarPopupIfNeeded(it) }
-        
+
         refreshCache()
-        val homePageList = mutableListOf<HomePageList>()
+        val list = mutableListOf<HomePageList>()
 
         when (request.data) {
-            "languages_top" -> {
-                cachedLanguages.forEach { language ->
-                    val languageShows = cachedShows
-                        .filter { it.language == language.id }
-                        .map { show ->
-                            newTvSeriesSearchResponse(
-                                name = show.name,
-                                url = "show:${show.id}",
-                                type = TvType.TvSeries
-                            ) {
-                                this.posterUrl = formatPosterUrl(show.cover.ifEmpty { show.thumb })
-                            }
+            "trending" -> {
+                // Trending movies
+                val trendingMovies = cachedMovies
+                    .filter { it.trending == 1 }
+                    .take(20)
+                    .map { movie ->
+                        newMovieSearchResponse(movie.displayName(), "movie:${movie.id}", TvType.Movie) {
+                            this.posterUrl = movie.bestPoster()
                         }
-
-                    if (languageShows.isNotEmpty()) {
-                        homePageList.add(
-                            HomePageList(
-                                "${language.name} Shows",
-                                languageShows,
-                                isHorizontalImages = true
-                            )
-                        )
                     }
+                if (trendingMovies.isNotEmpty())
+                    list.add(HomePageList("Trending Movies", trendingMovies, isHorizontalImages = true))
 
-                    val languageMovies = cachedMovies
-                        .filter { it.language == language.id }
-                        .map { movie ->
-                            newMovieSearchResponse(
-                                name = movie.name,
-                                url = "movie:${movie.id}",
-                                type = TvType.Movie
-                            ) {
-                                this.posterUrl = formatPosterUrl(movie.cover.ifEmpty { movie.thumb })
-                            }
+                // Trending episodes (grouped by show)
+                val trendingEpisodes = cachedEpisodes
+                    .filter { it.trending == 1 }
+                    .take(20)
+                    .map { ep ->
+                        newTvSeriesSearchResponse(ep.displayName(), "episode:${ep.id}", TvType.TvSeries) {
+                            this.posterUrl = if (!ep.thumb.isNullOrEmpty()) formatUrl(ep.thumb) else ""
                         }
-
-                    if (languageMovies.isNotEmpty()) {
-                        homePageList.add(
-                            HomePageList(
-                                "${language.name} Movies",
-                                languageMovies,
-                                isHorizontalImages = true
-                            )
-                        )
                     }
-                }
-            }
-
-            "trending_shows" -> {
-                val trendingShows = cachedShows.take(20).map { show ->
-                    val languageName = getLanguageName(show.language)
-                    newTvSeriesSearchResponse(
-                        name = "${show.name} ($languageName)",
-                        url = "show:${show.id}",
-                        type = TvType.TvSeries
-                    ) {
-                        this.posterUrl = formatPosterUrl(show.cover.ifEmpty { show.thumb })
-                    }
-                }
-                homePageList.add(HomePageList("Trending Shows", trendingShows, isHorizontalImages = true))
+                if (trendingEpisodes.isNotEmpty())
+                    list.add(HomePageList("Trending Episodes", trendingEpisodes, isHorizontalImages = true))
             }
 
             "latest_episodes" -> {
-                val latestEpisodes = cachedEpisodes.take(20).map { episode ->
-                    val showName = getShowName(episode.showId)
-                    val languageName = getLanguageName(episode.language)
-                    newTvSeriesSearchResponse(
-                        name = "$showName - ${episode.name} ($languageName)",
-                        url = "episode:${episode.id}",
-                        type = TvType.TvSeries
-                    ) {
-                        this.posterUrl = formatPosterUrl(episode.thumb)
+                val latestEpisodes = cachedEpisodes.take(20).map { ep ->
+                    newTvSeriesSearchResponse(ep.displayName(), "episode:${ep.id}", TvType.TvSeries) {
+                        this.posterUrl = if (!ep.thumb.isNullOrEmpty()) formatUrl(ep.thumb) else ""
                     }
                 }
-                homePageList.add(HomePageList("Latest Episodes", latestEpisodes, isHorizontalImages = true))
+                list.add(HomePageList("Latest Episodes", latestEpisodes, isHorizontalImages = true))
             }
 
             "movies" -> {
-                val movieItems = cachedMovies.take(20).map { movie ->
-                    val languageName = getLanguageName(movie.language)
-                    newMovieSearchResponse(
-                        name = "${movie.name} ($languageName)",
-                        url = "movie:${movie.id}",
-                        type = TvType.Movie
-                    ) {
-                        this.posterUrl = formatPosterUrl(movie.cover.ifEmpty { movie.thumb })
+                // Group movies by language for a richer main page
+                val byLanguage = cachedMovies.groupBy { it.languageName.orEmpty() }
+                byLanguage.forEach { (lang, movies) ->
+                    val items = movies.take(20).map { movie ->
+                        newMovieSearchResponse(movie.name, "movie:${movie.id}", TvType.Movie) {
+                            this.posterUrl = movie.bestPoster()
+                        }
                     }
+                    val label = if (lang.isNotEmpty()) "$lang Movies" else "Movies"
+                    list.add(HomePageList(label, items, isHorizontalImages = true))
                 }
-                homePageList.add(HomePageList("Movies", movieItems, isHorizontalImages = true))
             }
         }
 
-        return newHomePageResponse(homePageList)
+        return newHomePageResponse(list)
     }
+
+    // ─── Search ────────────────────────────────────────────────────────────────
 
     override suspend fun search(query: String): List<SearchResponse> {
-        
         refreshCache()
-        val searchResults = mutableListOf<SearchResponse>()
+        val results = mutableListOf<SearchResponse>()
 
-        cachedShows.filter {
-            it.name.contains(query, ignoreCase = true) ||
-            (it.des.contains(query, ignoreCase = true))
-        }.forEach { show ->
-            val languageName = getLanguageName(show.language)
-            searchResults.add(
-                newTvSeriesSearchResponse(
-                    name = "${show.name} ($languageName)",
-                    url = "show:${show.id}",
-                    type = TvType.TvSeries
-                ) {
-                    this.posterUrl = formatPosterUrl(show.cover.ifEmpty { show.thumb })
-                }
-            )
-        }
-
-        // Search in episodes
-        cachedEpisodes.filter {
-            it.name.contains(query, ignoreCase = true) ||
-            it.tags.contains(query, ignoreCase = true)
-        }.forEach { episode ->
-            val showName = getShowName(episode.showId)
-            val languageName = getLanguageName(episode.language)
-            searchResults.add(
-                newTvSeriesSearchResponse(
-                    name = "$showName - ${episode.name} ($languageName)",
-                    url = "episode:${episode.id}",
-                    type = TvType.TvSeries
-                ) {
-                    this.posterUrl = formatPosterUrl(episode.thumb)
-                }
-            )
-        }
-
-        // Search in movies
         cachedMovies.filter {
             it.name.contains(query, ignoreCase = true) ||
-            (it.des.contains(query, ignoreCase = true)) ||
-            it.tags.contains(query, ignoreCase = true)
+            (it.des?.contains(query, ignoreCase = true) == true) ||
+            (it.tags?.contains(query, ignoreCase = true) == true) ||
+            (it.showName?.contains(query, ignoreCase = true) == true)
         }.forEach { movie ->
-            val languageName = getLanguageName(movie.language)
-            searchResults.add(
-                newMovieSearchResponse(
-                    name = "${movie.name} ($languageName)",
-                    url = "movie:${movie.id}",
-                    type = TvType.Movie
-                ) {
-                    this.posterUrl = formatPosterUrl(movie.cover.ifEmpty { movie.thumb })
+            results.add(
+                newMovieSearchResponse(movie.displayName(), "movie:${movie.id}", TvType.Movie) {
+                    this.posterUrl = movie.bestPoster()
                 }
             )
         }
 
-        return searchResults
+        cachedEpisodes.filter {
+            it.name.contains(query, ignoreCase = true) ||
+            (it.tags?.contains(query, ignoreCase = true) == true) ||
+            (it.showName?.contains(query, ignoreCase = true) == true)
+        }.forEach { ep ->
+            results.add(
+                newTvSeriesSearchResponse(ep.displayName(), "episode:${ep.id}", TvType.TvSeries) {
+                    this.posterUrl = if (!ep.thumb.isNullOrEmpty()) formatUrl(ep.thumb) else ""
+                }
+            )
+        }
+
+        return results
     }
 
+    // ─── Load ──────────────────────────────────────────────────────────────────
+
     override suspend fun load(url: String): LoadResponse? {
-        
         refreshCache()
         val str = url.substringAfterLast("/")
         val parts = str.split(":")
         if (parts.size != 2) return null
 
         val type = parts[0]
-        val id = parts[1].toIntOrNull() ?: return null
+        val id   = parts[1].toIntOrNull() ?: return null
 
         return when (type) {
-            "show" -> {
-                val show = cachedShows.find { it.id == id } ?: return null
-                val showSeasons = cachedSeasons.filter { it.showId == id }
-                val languageName = getLanguageName(show.language)
-
-                val episodes = mutableListOf<Episode>()
-                showSeasons.forEach { season ->
-                    episodes.addAll(cachedEpisodes.filter { it.seasonId == season.id })
-                }
-
-                newTvSeriesLoadResponse(
-                    name = "${show.name} ($languageName)",
-                    url = url,
-                    type = TvType.TvSeries,
-                    episodes = episodes.map { episode ->
-                        newEpisode("episode:${episode.id}") {
-                            this.name = episode.name
-                            this.season = showSeasons.find { it.id == episode.seasonId }?.no
-                            this.episode = episode.no
-                            this.posterUrl = formatPosterUrl(episode.thumb)
-                            this.description = episode.des
-                        }
-                    }
-                ) {
-                    this.posterUrl = formatPosterUrl(show.cover.ifEmpty { show.thumb })
-                    this.plot = "${show.des}\n\nLanguage: $languageName"
-                }
-            }
-
             "movie" -> {
                 val movie = cachedMovies.find { it.id == id } ?: return null
-                val languageName = getLanguageName(movie.language)
 
                 newMovieLoadResponse(
-                    name = "${movie.name} ($languageName)",
-                    url = url,
-                    type = TvType.Movie,
+                    name    = movie.displayName(),
+                    url     = url,
+                    type    = TvType.Movie,
                     dataUrl = "movie:${movie.id}"
                 ) {
-                    this.posterUrl = formatPosterUrl(movie.cover.ifEmpty { movie.thumb })
-                    this.plot = "${movie.des}\n\nLanguage: $languageName"
+                    this.posterUrl = movie.bestPoster()
+                    this.plot = buildString {
+                        movie.des?.let { append(it); append("\n\n") }
+                        if (!movie.rating.isNullOrEmpty())       append("⭐ ${movie.rating}\n")
+                        if (!movie.avgRuntime.isNullOrEmpty())   append("⏱ ${movie.avgRuntime}\n")
+                        if (!movie.ageRating.isNullOrEmpty())    append("👶 ${movie.ageRating}\n")
+                        if (!movie.languageName.isNullOrEmpty()) append("🌐 ${movie.languageName}")
+                    }
+                    this.year = movie.createdAt?.take(4)?.toIntOrNull()
                 }
             }
 
             "episode" -> {
-                val episode = cachedEpisodes.find { it.id == id } ?: return null
-                val show = cachedShows.find { it.id == episode.showId }
-                val season = cachedSeasons.find { it.id == episode.seasonId }
-                val languageName = getLanguageName(episode.language)
+                val ep = cachedEpisodes.find { it.id == id } ?: return null
 
-                newMovieLoadResponse(
-                    name = "${show?.name ?: "Unknown"} - ${episode.name} ($languageName)",
-                    url = url,
-                    type = TvType.TvSeries,
-                    dataUrl = "episode:${episode.id}"
+                // Group all episodes belonging to the same show+language into a proper TvSeries
+                val showEpisodes = cachedEpisodes.filter {
+                    it.showId == ep.showId && it.language == ep.language
+                }.sortedWith(compareBy({ it.seasonId }, { it.no }))
+
+                // Build season number mapping (season_id → sequential season number)
+                val seasonIds = showEpisodes.map { it.seasonId }.distinct().sorted()
+                val seasonNoMap = seasonIds.withIndex().associate { (idx, sid) -> sid to (idx + 1) }
+
+                val episodeList = showEpisodes.map { e ->
+                    newEpisode("episode:${e.id}") {
+                        this.name      = e.name
+                        this.season    = seasonNoMap[e.seasonId]
+                        this.episode   = e.no
+                        this.posterUrl = if (!e.thumb.isNullOrEmpty()) formatUrl(e.thumb) else ""
+                        this.description = e.des?.ifEmpty { null }
+                    }
+                }
+
+                val showTitle = ep.showName?.ifEmpty { "Show" } ?: "Show"
+                val langLabel = ep.languageName.orEmpty()
+                val displayTitle = if (langLabel.isNotEmpty()) "$showTitle ($langLabel)" else showTitle
+
+                newTvSeriesLoadResponse(
+                    name     = displayTitle,
+                    url      = url,
+                    type     = TvType.TvSeries,
+                    episodes = episodeList
                 ) {
-                    this.posterUrl = formatPosterUrl(episode.thumb)
-                    this.plot = "${episode.des}\n\nSeason: ${season?.name ?: "Unknown"}\nLanguage: $languageName"
+                    // Use movie poster if available (look up by show_id)
+                    val matchedMovie = cachedMovies.find {
+                        it.showId == ep.showId && it.language == ep.language
+                    }
+                    this.posterUrl = matchedMovie?.bestPoster()
+                        ?: (if (!ep.thumb.isNullOrEmpty()) formatUrl(ep.thumb) else "")
+                    this.plot = if (langLabel.isNotEmpty()) "Language: $langLabel" else null
                 }
             }
 
             else -> null
         }
     }
+
+    // ─── Load links ────────────────────────────────────────────────────────────
 
     override suspend fun loadLinks(
         data: String,
@@ -530,142 +419,47 @@ class XonProvider : MainAPI() {
         if (parts.size != 2) return false
 
         val type = parts[0]
-        val id = parts[1].toIntOrNull() ?: return false
+        val id   = parts[1].toIntOrNull() ?: return false
 
         when (type) {
             "episode" -> {
-                val episode = cachedEpisodes.find { it.id == id } ?: return false
-
-                // Add different quality links
-                if (episode.basic.isNotEmpty()) {
-                    callback(
-                        newExtractorLink(
-                            name,
-                            "$name - Basic",
-                            url = formatPosterUrl(episode.basic),
-                            ExtractorLinkType.VIDEO
-                        ) {
-                            this.referer = mainUrl
-                            this.quality = Qualities.P240.value
-                        }
-                    )
-                }
-
-                if (episode.sd.isNotEmpty()) {
-                    callback(
-                        newExtractorLink(
-                            name,
-                            "$name - SD",
-                            url = formatPosterUrl(episode.sd),
-                            ExtractorLinkType.VIDEO
-                        ) {
-                            this.referer = mainUrl
-                            this.quality = Qualities.P480.value
-                        }
-                    )
-                }
-
-                if (episode.hd.isNotEmpty()) {
-                    callback(
-                        newExtractorLink(
-                            name,
-                            "$name - HD",
-                            url = formatPosterUrl(episode.hd),
-                            ExtractorLinkType.VIDEO
-                        ) {
-                            this.referer = mainUrl
-                            this.quality = Qualities.P720.value
-                        }
-                    )
-                }
-
-                if (episode.fhd.isNotEmpty()) {
-                    callback(
-                        newExtractorLink(
-                            name,
-                            "$name - FHD",
-                            url = formatPosterUrl(episode.fhd),
-                            ExtractorLinkType.VIDEO
-                        ) {
-                            this.referer = mainUrl
-                            this.quality = Qualities.P1080.value
-                        }
-                    )
-                }
-
-                // Add external player link if available
-                if (episode.link.isNotEmpty()) {
-                   loadExtractor(episode.link, subtitleCallback, callback)
-                }
+                val ep = cachedEpisodes.find { it.id == id } ?: return false
+                addVideoLinks(ep.basic.orEmpty(), ep.sd.orEmpty(), ep.hd.orEmpty(), ep.fhd.orEmpty(), callback)
+                if (!ep.aplayer1.isNullOrEmpty()) loadExtractor(ep.aplayer1, subtitleCallback, callback)
+                if (!ep.aplayer2.isNullOrEmpty()) loadExtractor(ep.aplayer2, subtitleCallback, callback)
             }
 
             "movie" -> {
                 val movie = cachedMovies.find { it.id == id } ?: return false
-
-                // Add different quality links
-                if (movie.basic.isNotEmpty()) {
-                    callback(
-                        newExtractorLink(
-                            name,
-                            "$name - Basic",
-                            url = formatPosterUrl(movie.basic),
-                            ExtractorLinkType.VIDEO
-                        ) {
-                            this.referer = mainUrl
-                            this.quality = Qualities.P240.value
-                        }
-                    )
-                }
-
-                if (movie.sd.isNotEmpty()) {
-                    callback(
-                        newExtractorLink(
-                            name,
-                            "$name - SD",
-                            url = formatPosterUrl(movie.sd),
-                            ExtractorLinkType.VIDEO
-                        ) {
-                            this.referer = mainUrl
-                            this.quality = Qualities.P480.value
-                        }
-                    )
-                }
-
-                if (movie.hd.isNotEmpty()) {
-                    callback(
-                        newExtractorLink(
-                            name,
-                            "$name - HD",
-                            url = formatPosterUrl(movie.hd),
-                            ExtractorLinkType.VIDEO
-                        ) {
-                            this.referer = mainUrl
-                            this.quality = Qualities.P720.value
-                        }
-                    )
-                }
-
-                if (movie.fhd.isNotEmpty()) {
-                    callback(
-                        newExtractorLink(
-                            name,
-                            "$name - FHD",
-                            url = formatPosterUrl(movie.fhd),
-                            ExtractorLinkType.VIDEO
-                        ) {
-                            this.referer = mainUrl
-                            this.quality = Qualities.P1080.value
-                        }
-                    )
-                }
-
-                // Add external player link if available
-                if (movie.link.isNotEmpty()) {
-                    loadExtractor(movie.link, subtitleCallback, callback)
-                }
+                addVideoLinks(movie.basic.orEmpty(), movie.sd.orEmpty(), movie.hd.orEmpty(), movie.fhd.orEmpty(), callback)
+                if (!movie.xPlayer2.isNullOrEmpty()) loadExtractor(movie.xPlayer2, subtitleCallback, callback)
+                if (!movie.xPlayer3.isNullOrEmpty()) loadExtractor(movie.xPlayer3, subtitleCallback, callback)
             }
+
+            else -> return false
         }
 
         return true
     }
+
+    // ─── Helper: add direct video quality links ────────────────────────────────
+
+    private suspend fun addVideoLinks(
+        basic: String,
+        sd: String,
+        hd: String,
+        fhd: String,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        if (basic.isNotEmpty()) callback(makeLink("Basic", formatUrl(basic), Qualities.P240.value))
+        if (sd.isNotEmpty())    callback(makeLink("SD",    formatUrl(sd),    Qualities.P480.value))
+        if (hd.isNotEmpty())    callback(makeLink("HD",    formatUrl(hd),    Qualities.P720.value))
+        if (fhd.isNotEmpty())   callback(makeLink("FHD",   formatUrl(fhd),   Qualities.P1080.value))
+    }
+
+    private suspend fun makeLink(label: String, url: String, quality: Int): ExtractorLink =
+        newExtractorLink(name, "$name - $label", url = url, ExtractorLinkType.VIDEO) {
+            this.referer = mainUrl
+            this.quality = quality
+        }
 }

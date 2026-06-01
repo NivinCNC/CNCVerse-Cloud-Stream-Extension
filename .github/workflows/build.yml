@@ -71,6 +71,9 @@ jobs:
           CINETV_WS_SECRET: ${{ secrets.CINETV_WS_SECRET }}
           SMARTLINK_URL: ${{ secrets.SMARTLINK_URL }}
           SPEEDLINK_URL: ${{ secrets.SPEEDLINK_URL }}
+          XON_FIREBASE_API_KEY: ${{ secrets.XON_FIREBASE_API_KEY }}
+          XON_FIREBASE_APP_ID: ${{ secrets.XON_FIREBASE_APP_ID }}
+          XON_FIREBASE_PROJECT_NUMBER: ${{ secrets.XON_FIREBASE_PROJECT_NUMBER }}
         run: |
           cd $GITHUB_WORKSPACE/src
           echo CONSUMET_API=$CONSUMET_API >> local.properties
@@ -94,7 +97,9 @@ jobs:
           echo CINETV_WS_SECRET=$CINETV_WS_SECRET >> local.properties
           echo SMARTLINK_URL=$SMARTLINK_URL >> local.properties
           echo SPEEDLINK_URL=$SPEEDLINK_URL >> local.properties
-    
+          echo XON_FIREBASE_API_KEY=$XON_FIREBASE_API_KEY >> local.properties
+          echo XON_FIREBASE_APP_ID=$XON_FIREBASE_APP_ID >> local.properties
+          echo XON_FIREBASE_PROJECT_NUMBER=$XON_FIREBASE_PROJECT_NUMBER >> local.properties
       - name: Build Plugins
         env:
           MOVIEBOX_SECRET_KEY_DEFAULT: ${{ secrets.MOVIEBOX_SECRET_KEY_DEFAULT }}
@@ -122,6 +127,9 @@ jobs:
           CINETV_WS_SECRET: ${{ secrets.CINETV_WS_SECRET }}
           SMARTLINK_URL: ${{ secrets.SMARTLINK_URL }}
           SPEEDLINK_URL: ${{ secrets.SPEEDLINK_URL }}
+          XON_FIREBASE_API_KEY: ${{ secrets.XON_FIREBASE_API_KEY }}
+          XON_FIREBASE_APP_ID: ${{ secrets.XON_FIREBASE_APP_ID }}
+          XON_FIREBASE_PROJECT_NUMBER: ${{ secrets.XON_FIREBASE_PROJECT_NUMBER }}
         run: |
           cd $GITHUB_WORKSPACE/src
           chmod +x gradlew
