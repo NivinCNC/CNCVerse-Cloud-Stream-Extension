@@ -45,7 +45,7 @@ jobs:
           cd $GITHUB_WORKSPACE/src
           touch local.properties
           chmod +x gradlew
-          ./gradlew makePluginsJson --continue -x :Ultima:compileDebugKotlin || true
+          ./gradlew makePluginsJson --continue || true
           cp **/build/*.cs3 $GITHUB_WORKSPACE/builds || true
           cp **/build/*.jar $GITHUB_WORKSPACE/builds || true
           find . -name "plugins.json" -exec cp {} $GITHUB_WORKSPACE/builds/ \; || true
