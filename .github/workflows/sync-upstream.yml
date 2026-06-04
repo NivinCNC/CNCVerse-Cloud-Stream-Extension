@@ -21,4 +21,6 @@ jobs:
           git remote add upstream https://github.com/NivinCNC/CNCVerse-Cloud-Stream-Extension.git
           git fetch upstream
           git merge upstream/master --allow-unrelated-histories -m "Sync upstream"
+          git checkout HEAD -- .github/workflows/build.yml
+          git checkout HEAD -- .github/workflows/sync-upstream.yml
           git push origin master
