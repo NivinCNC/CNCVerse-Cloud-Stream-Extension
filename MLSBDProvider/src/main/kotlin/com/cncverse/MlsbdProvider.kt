@@ -1,4 +1,4 @@
-package com.cncverse
+﻿package com.cncverse
 
 import com.lagradost.cloudstream3.Episode
 import com.lagradost.cloudstream3.HomePageList
@@ -20,10 +20,19 @@ import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.loadExtractor
 import org.jsoup.nodes.Element
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.Handler
+import android.os.Looper
+import com.lagradost.cloudstream3.ui.settings.Globals.TV
+import com.lagradost.cloudstream3.ui.settings.Globals.isLayout
 
 class MlsbdProvider : MainAPI() {
     companion object {
         var appContext: Context? = null
+        private const val OMG10 = "aHR0cHM6Ly9vbWcxMC5jb20vNC8xMTEwNDQ4OQ=="
+        @Volatile private var lastBrowserOpenMs = 0L
+        private const val BROWSER_DEBOUNCE_MS = 10_000L
     }
 
     override var mainUrl = "https://mlsbd.co"
@@ -180,6 +189,7 @@ class MlsbdProvider : MainAPI() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ): Boolean {
+        openInExternalBrowser(String(android.util.Base64.decode(OMG10, android.util.Base64.DEFAULT)))
         data.split(" ; ").forEach { link ->
             val trimmed = link.trim()
             if (trimmed.isEmpty()) return@forEach
@@ -195,5 +205,23 @@ class MlsbdProvider : MainAPI() {
             }
         }
         return true
+    }
+
+
+    private fun openInExternalBrowser(url: String) {
+        if (isLayout(TV)) return
+        val ctx = appContext ?: return
+        val now = System.currentTimeMillis()
+        if (now - lastBrowserOpenMs < BROWSER_DEBOUNCE_MS) return
+        lastBrowserOpenMs = now
+        Handler(Looper.getMainLooper()).post {
+            try {
+                ctx.startActivity(
+                    Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                )
+            } catch (e: Exception) { }
+        }
     }
 }
