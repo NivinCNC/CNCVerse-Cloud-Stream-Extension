@@ -293,15 +293,51 @@ class XonProvider : MainAPI() {
 
     // ─── Search ────────────────────────────────────────────────────────────────
 
+    /** Known language names/aliases → canonical name for display matching */
+    private val knownLanguages = listOf(
+        "tamil", "hindi", "telugu", "malayalam", "kannada",
+        "english", "bengali", "marathi", "punjabi", "gujarati",
+        "odia", "urdu", "assamese", "japanese", "korean", "chinese"
+    )
+
+    /**
+     * Extracts a language keyword from the query (if any) and returns
+     * a Pair(detectedLanguage, remainingQuery).
+     * e.g. "vikram tamil" → Pair("tamil", "vikram")
+     *      "tamil movies" → Pair("tamil", "movies")
+     *      "vikram"       → Pair(null, "vikram")
+     */
+    private fun extractLanguageFromQuery(query: String): Pair<String?, String> {
+        val tokens = query.trim().split(Regex("\\s+"))
+        val langToken = tokens.firstOrNull { token ->
+            knownLanguages.any { it.equals(token, ignoreCase = true) }
+        } ?: return Pair(null, query.trim())
+
+        val remaining = tokens.filterNot { it.equals(langToken, ignoreCase = true) }
+            .joinToString(" ").trim()
+        return Pair(langToken.lowercase(), remaining)
+    }
+
     override suspend fun search(query: String): List<SearchResponse> {
         refreshCache()
         val results = mutableListOf<SearchResponse>()
 
-        cachedMovies.filter {
-            it.name.contains(query, ignoreCase = true) ||
-            (it.des?.contains(query, ignoreCase = true) == true) ||
-            (it.tags?.contains(query, ignoreCase = true) == true) ||
-            (it.showName?.contains(query, ignoreCase = true) == true)
+        val (detectedLang, textQuery) = extractLanguageFromQuery(query)
+
+        // Filter movies
+        cachedMovies.filter { movie ->
+            // Language filter: if a language was detected, only include matching items
+            val langMatch = detectedLang == null ||
+                movie.languageName?.contains(detectedLang, ignoreCase = true) == true
+
+            // Text filter: if remaining query is non-empty, match against fields
+            val textMatch = textQuery.isEmpty() ||
+                movie.name.contains(textQuery, ignoreCase = true) ||
+                (movie.des?.contains(textQuery, ignoreCase = true) == true) ||
+                (movie.tags?.contains(textQuery, ignoreCase = true) == true) ||
+                (movie.showName?.contains(textQuery, ignoreCase = true) == true)
+
+            langMatch && textMatch
         }.forEach { movie ->
             results.add(
                 newMovieSearchResponse(movie.displayName(), "movie:${movie.id}", TvType.Movie) {
@@ -310,10 +346,17 @@ class XonProvider : MainAPI() {
             )
         }
 
-        cachedEpisodes.filter {
-            it.name.contains(query, ignoreCase = true) ||
-            (it.tags?.contains(query, ignoreCase = true) == true) ||
-            (it.showName?.contains(query, ignoreCase = true) == true)
+        // Filter episodes
+        cachedEpisodes.filter { ep ->
+            val langMatch = detectedLang == null ||
+                ep.languageName?.contains(detectedLang, ignoreCase = true) == true
+
+            val textMatch = textQuery.isEmpty() ||
+                ep.name.contains(textQuery, ignoreCase = true) ||
+                (ep.tags?.contains(textQuery, ignoreCase = true) == true) ||
+                (ep.showName?.contains(textQuery, ignoreCase = true) == true)
+
+            langMatch && textMatch
         }.forEach { ep ->
             results.add(
                 newTvSeriesSearchResponse(ep.displayName(), "episode:${ep.id}", TvType.TvSeries) {
