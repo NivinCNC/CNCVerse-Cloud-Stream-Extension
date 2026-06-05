@@ -233,7 +233,6 @@ class XonProvider : MainAPI() {
     )
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
-        context?.let { StarPopupHelper.showStarPopupIfNeeded(it) }
 
         refreshCache()
         val list = mutableListOf<HomePageList>()

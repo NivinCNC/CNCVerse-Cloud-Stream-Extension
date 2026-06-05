@@ -46,7 +46,7 @@ class LibriVoxAudiobook : MainAPI() { // all providers must be an instance of Ma
             )
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
-        LibriVoxAudiobook.context?.let { StarPopupHelper.showStarPopupIfNeeded(it) }
+
         val reqlink = request.data
 
         val home =

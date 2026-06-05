@@ -44,11 +44,7 @@ class EinthusanProvider : MainAPI() { // all providers must be an instance of Ma
         page: Int,
         request: MainPageRequest
     ): HomePageResponse {
-        context?.let { ctx ->
-            withContext(Dispatchers.Main) {
-                StarPopupHelper.showStarPopupIfNeeded(ctx)
-            }
-        }
+        
         val document = if (page == 1) {
             app.get(request.data).document
         } else {

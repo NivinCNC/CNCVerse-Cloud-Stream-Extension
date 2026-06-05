@@ -201,11 +201,7 @@ class PikashowProvider : MainAPI() {
     }
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
-        context?.let { ctx ->
-            withContext(Dispatchers.Main) {
-                StarPopupHelper.showStarPopupIfNeeded(ctx)
-            }
-        }
+        
         val headers = getPikashowHeaders()
         val homePageList = mutableListOf<HomePageList>()
 

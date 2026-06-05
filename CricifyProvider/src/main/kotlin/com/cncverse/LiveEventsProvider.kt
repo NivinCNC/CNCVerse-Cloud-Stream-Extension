@@ -201,7 +201,7 @@ class LiveEventsProvider : MainAPI() {
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
         // Show star popup on first visit
-        LiveEventsProvider.context?.let { StarPopupHelper.showStarPopupIfNeeded(it) }
+
 
         // Fetch live events using ProviderManager (same as providers)
         val events = ProviderManager.fetchLiveEvents()

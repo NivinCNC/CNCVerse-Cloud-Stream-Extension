@@ -40,11 +40,7 @@ class MoviezwapProvider : MainAPI() {
         page: Int,
         request: MainPageRequest
     ): HomePageResponse {
-        context?.let { ctx ->
-            withContext(Dispatchers.Main) {
-                StarPopupHelper.showStarPopupIfNeeded(ctx)
-            }
-        }
+        
         
         val document = try {
             val url = if (page == 1) {

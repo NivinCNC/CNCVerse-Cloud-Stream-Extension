@@ -44,7 +44,7 @@ class RadioIndiaProvider : MainAPI() {
         page: Int,
         request: MainPageRequest
     ): HomePageResponse {
-        RadioIndiaProvider.context?.let { StarPopupHelper.showStarPopupIfNeeded(it) }
+
         val document = app.get(request.data).document
         val home = document.select("ul.mdc-grid-list__tiles li a").mapNotNull {
             it.toSearchResponse()

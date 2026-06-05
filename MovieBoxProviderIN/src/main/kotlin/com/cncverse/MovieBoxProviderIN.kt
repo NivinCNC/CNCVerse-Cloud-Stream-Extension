@@ -165,7 +165,6 @@ class MovieBoxProviderIN : MainAPI() {
 
      override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
         // Show star popup on first visit (shared across all CNCVerse plugins)
-        context?.let { StarPopupHelper.showStarPopupIfNeeded(it) }
         
         val url = "$mainUrl/wefeed-mobile-bff/tab-operating?page=1&tabId=0&version="
 

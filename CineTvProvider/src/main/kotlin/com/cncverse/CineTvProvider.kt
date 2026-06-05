@@ -526,8 +526,6 @@ class CineTvProvider : MainAPI() {
     )
     
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
-        CineTvProvider.context?.let { StarPopupHelper.showStarPopupIfNeeded(it) }
-
         val vodItems = if (request.data == "1") {
             searchRecommend(page)?.result
         } else {

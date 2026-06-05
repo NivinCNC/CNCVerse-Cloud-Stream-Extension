@@ -56,7 +56,6 @@ class MlsbdProvider : MainAPI() {
         page: Int,
         request: MainPageRequest
     ): HomePageResponse {
-        appContext?.let { StarPopupHelper.showStarPopupIfNeeded(it) }
         val url = if (request.data == "") mainUrl
         else "$mainUrl${request.data}$page/"
         val doc = app.get(url, cacheTime = 1440, allowRedirects = true, timeout = 60, headers = headers).document
