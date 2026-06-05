@@ -57,11 +57,7 @@ class Watch32Provider : MainAPI() {
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest
     ): HomePageResponse {
-        context?.let { ctx ->
-            withContext(Dispatchers.Main) {
-                StarPopupHelper.showStarPopupIfNeeded(ctx)
-            }
-        }
+        
         val doc = app.get("$mainUrl/${request.data}?page=$page", cacheTime = 60, timeout = 20).document
         val home = doc.select(".film_list-wrap .flw-item").mapNotNull { toResult(it) }
 

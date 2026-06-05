@@ -29,14 +29,6 @@ class HDO : TmdbProvider() {
     }
     
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
-        // Show star popup on first home page visit (shared across all CNCVerse plugins)
-        cont?.let { context ->
-            withContext(Dispatchers.Main) {
-                StarPopupHelper.showStarPopupIfNeeded(context)
-            }
-        }
-        
-        // Call the parent implementation
         return super.getMainPage(page, request)
     }
     

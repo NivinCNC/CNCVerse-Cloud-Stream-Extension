@@ -151,7 +151,6 @@ class PlayZTVLiveEventsProvider : MainAPI() {
     // ── CloudStream interface ─────────────────────────────────────────────────
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
-        context?.let { StarPopupHelper.showStarPopupIfNeeded(it) }
 
         val events = PlayZTVProviderManager.fetchLiveEvents()
         val grouped = events.groupBy { it.eventInfo?.eventCat ?: it.cat ?: "Other" }

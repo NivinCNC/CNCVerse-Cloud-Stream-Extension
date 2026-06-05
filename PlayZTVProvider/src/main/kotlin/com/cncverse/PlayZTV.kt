@@ -226,7 +226,7 @@ private fun String.hexToBase64UrlOrNull(): String? {
         request : MainPageRequest
     ): HomePageResponse {
         // Show star popup on first visit (shared across all CNCVerse plugins)
-        PlayZTV.context?.let { StarPopupHelper.showStarPopupIfNeeded(it) }
+
         
         val rawContent = getWithCustomHeaders(mainUrl)
         val decryptedContent = decryptContent(rawContent)
