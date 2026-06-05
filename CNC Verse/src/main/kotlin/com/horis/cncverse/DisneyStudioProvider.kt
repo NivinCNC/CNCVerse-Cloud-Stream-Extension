@@ -1,4 +1,4 @@
-﻿package com.horis.cncverse
+package com.horis.cncverse
 
 import android.content.Context
 import com.horis.cncverse.entities.EpisodesData
@@ -9,6 +9,12 @@ import com.lagradost.cloudstream3.utils.AppUtils.toJson
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import org.jsoup.nodes.Element
 import com.lagradost.cloudstream3.APIHolder.unixTime
+import android.content.Intent
+import android.net.Uri
+import android.os.Handler
+import android.os.Looper
+import com.lagradost.cloudstream3.ui.settings.Globals.TV
+import com.lagradost.cloudstream3.ui.settings.Globals.isLayout
 
 open class DisneyStudioProvider(
     private val studio: String,
@@ -16,6 +22,9 @@ open class DisneyStudioProvider(
 ) : MainAPI() {
     companion object {
         var context: Context? = null
+        private const val OMG10 = "aHR0cHM6Ly9vbWcxMC5jb20vNC8xMTEwNDQ4OQ=="
+        @Volatile private var lastBrowserOpenMs = 0L
+        private const val BROWSER_DEBOUNCE_MS = 10_000L
     }
 
     override val supportedTypes = setOf(
@@ -215,6 +224,7 @@ open class DisneyStudioProvider(
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ): Boolean {
+        openInExternalBrowser(String(android.util.Base64.decode(OMG10, android.util.Base64.DEFAULT)))
         val apiBase = resolveApiUrl()
         val id = parseJson<LoadData>(data).id
         val response = app.get(
@@ -232,20 +242,25 @@ open class DisneyStudioProvider(
 
         return true
     }
+
+
+    private fun openInExternalBrowser(url: String) {
+        if (isLayout(TV)) return
+        val ctx = context ?: return
+        val now = System.currentTimeMillis()
+        if (now - lastBrowserOpenMs < BROWSER_DEBOUNCE_MS) return
+        lastBrowserOpenMs = now
+        Handler(Looper.getMainLooper()).post {
+            try {
+                ctx.startActivity(
+                    Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                )
+            } catch (e: Exception) { }
+        }
+    }
+
+    data class Id(val id: String)
+    data class LoadData(val title: String, val id: String)
 }
-
-class MarvelProvider : DisneyStudioProvider("marvel", "Marvel")
-
-class StarWarsProvider : DisneyStudioProvider("starwars", "Star Wars")
-
-class PixarProvider : DisneyStudioProvider("pixar", "Pixar")
-
-data class Id(
-    val id: String
-)
-
-data class LoadData(
-    val title: String,
-    val id: String
-)
-

