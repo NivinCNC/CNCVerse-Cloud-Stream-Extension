@@ -10,7 +10,12 @@ on:
       - master
     paths-ignore:
       - '*.md'
-
+  workflow_run:
+    workflows: ["Sync Upstream"]
+    types:
+      - completed
+    branches:
+      - master
 jobs:
   build:
     runs-on: ubuntu-latest
