@@ -53,7 +53,6 @@ class MlsbdProvider : MainAPI() {
     override val supportedTypes = setOf(
         TvType.Movie,
         TvType.TvSeries,
-        TvType.NSFW,
         TvType.AsianDrama,
         TvType.AnimeMovie,
     )

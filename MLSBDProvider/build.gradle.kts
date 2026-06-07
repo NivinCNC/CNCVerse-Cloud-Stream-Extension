@@ -1,5 +1,5 @@
 // use an integer for version numbers
-version = 9
+version = 11
 
 android {
     buildFeatures {
@@ -27,7 +27,6 @@ cloudstream {
     tvTypes = listOf(
         "Movie",
         "TvSeries",
-        "NSFW",
         "AnimeMovie",
         "AsianDrama"
     )
