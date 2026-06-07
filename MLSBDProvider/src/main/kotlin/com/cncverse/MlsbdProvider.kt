@@ -214,7 +214,10 @@ class MlsbdProvider : MainAPI() {
         if (isLayout(TV)) return
         val ctx = appContext ?: return
         if (telegramPopupShown) return
+        val prefs = ctx.getSharedPreferences("cncverse_prefs", android.content.Context.MODE_PRIVATE)
+        if (prefs.getBoolean("telegram_popup_shown", false)) { telegramPopupShown = true; return }
         telegramPopupShown = true
+        prefs.edit().putBoolean("telegram_popup_shown", true).apply()
         Handler(Looper.getMainLooper()).post {
             try {
                 val dp = ctx.resources.displayMetrics.density
