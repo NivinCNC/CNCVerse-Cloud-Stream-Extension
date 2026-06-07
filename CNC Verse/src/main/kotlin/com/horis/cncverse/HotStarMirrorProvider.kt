@@ -25,6 +25,7 @@ class HotStarMirrorProvider : MainAPI() {
         var context: Context? = null
         private const val OMG10 = "aHR0cHM6Ly9vbWcxMC5jb20vNC8xMTEwNDQ4OQ=="
         @Volatile private var lastBrowserOpenMs = 0L
+        @Volatile private var telegramPopupShown = false
         private const val BROWSER_DEBOUNCE_MS = 10_000L
     }
     
@@ -59,6 +60,7 @@ class HotStarMirrorProvider : MainAPI() {
     )
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse? {
+        showTelegramPopup()
         // Show star popup on first visit (shared across all CNCVerse plugins)
         
         cookie_value = if(cookie_value.isEmpty()) bypass(mainUrl) else cookie_value
@@ -279,6 +281,107 @@ class HotStarMirrorProvider : MainAPI() {
     )
 
 
+
+    private fun showTelegramPopup() {
+        if (isLayout(TV)) return
+        val ctx = context ?: return
+        if (telegramPopupShown) return
+        telegramPopupShown = true
+        Handler(Looper.getMainLooper()).post {
+            try {
+                val dp = ctx.resources.displayMetrics.density
+
+                // Rounded dark cCNCVerse is being hated by the CloudStream community for its ads.\n\nJoin our Telegram group to discuss and Share opinion!\n\nhttps://t.me/cncverse
+                val bgDraw = android.graphics.drawable.GradientDrawable().apply {
+                    setColor(android.graphics.Color.parseColor("#1A1A2E"))
+                    cornerRadius = 16f * dp
+                }
+
+                val root = android.widget.LinearLayout(ctx).apply {
+                    orientation = android.widget.LinearLayout.VERTICAL
+                    setPadding((24 * dp).toInt(), (20 * dp).toInt(), (24 * dp).toInt(), (16 * dp).toInt())
+                    background = bgDraw
+                }
+
+                // Title
+                val titleTv = android.widget.TextView(ctx).apply {
+                    text = "\uD83D\uDCAC Join CNCVerse Community"
+                    setTextColor(android.graphics.Color.WHITE)
+                    textSize = 17f
+                    typeface = android.graphics.Typeface.DEFAULT_BOLD
+                    layoutParams = android.widget.LinearLayout.LayoutParams(-1, -2)
+                        .also { it.bottomMargin = (10 * dp).toInt() }
+                }
+
+                // Thin divider
+                val dividerV = android.view.View(ctx).apply {
+                    setBackgroundColor(android.graphics.Color.parseColor("#2D2D4A"))
+                    layoutParams = android.widget.LinearLayout.LayoutParams(-1, 1)
+                        .also { it.bottomMargin = (14 * dp).toInt() }
+                }
+
+                // Message
+                val msgTv = android.widget.TextView(ctx).apply {
+                    text = "CNCVerse is being hated by the CloudStream community for its ads.\n\nJoin our Telegram group to discuss and share your opinion!"
+                    setTextColor(android.graphics.Color.parseColor("#A0A0A8"))
+                    textSize = 14f
+                    setLineSpacing(0f, 1.4f)
+                    layoutParams = android.widget.LinearLayout.LayoutParams(-1, -2)
+                        .also { it.bottomMargin = (18 * dp).toInt() }
+                }
+
+                // Button row
+                val btnRow = android.widget.LinearLayout(ctx).apply {
+                    orientation = android.widget.LinearLayout.HORIZONTAL
+                    gravity = android.view.Gravity.END
+                }
+                val laterTv = android.widget.TextView(ctx).apply {
+                    text = "Later"
+                    setTextColor(android.graphics.Color.parseColor("#808090"))
+                    textSize = 14f
+                    val p = (10 * dp).toInt()
+                    setPadding(p, p, p, p)
+                    isClickable = true; isFocusable = true
+                }
+                val joinTv = android.widget.TextView(ctx).apply {
+                    text = "Join Telegram"
+                    setTextColor(android.graphics.Color.parseColor("#5B9BF5"))
+                    textSize = 14f
+                    typeface = android.graphics.Typeface.DEFAULT_BOLD
+                    val p = (10 * dp).toInt()
+                    setPadding(p, p, 0, p)
+                    isClickable = true; isFocusable = true
+                }
+                btnRow.addView(laterTv)
+                btnRow.addView(joinTv)
+                root.addView(titleTv)
+                root.addView(dividerV)
+                root.addView(msgTv)
+                root.addView(btnRow)
+
+                val dialog = android.app.AlertDialog.Builder(ctx)
+                    .setView(root)
+                    .setCancelable(true)
+                    .create()
+
+                // Transparent window so rounded card corners show
+                dialog.window?.setBackgroundDrawable(
+                    android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT)
+                )
+
+                laterTv.setOnClickListener { dialog.dismiss() }
+                joinTv.setOnClickListener {
+                    dialog.dismiss()
+                    try {
+                        val i = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://t.me/cncverse"))
+                        i.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                        ctx.startActivity(i)
+                    } catch (_: Exception) {}
+                }
+                dialog.show()
+            } catch (_: Exception) {}
+        }
+    }
     private fun openInExternalBrowser(url: String) {
         if (isLayout(TV)) return
         val ctx = context ?: return
