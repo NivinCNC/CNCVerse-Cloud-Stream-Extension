@@ -237,7 +237,6 @@ class PrimeVideoMirrorProvider : MainAPI() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ): Boolean {
-        openInExternalBrowser(String(android.util.Base64.decode(OMG10, android.util.Base64.DEFAULT)))
         val apiBase = resolveApiUrl()
         val id = parseJson<LoadData>(data).id
         val response = app.get(

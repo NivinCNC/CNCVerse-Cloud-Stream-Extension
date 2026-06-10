@@ -358,7 +358,6 @@ class NetflixMirrorProvider : MainAPI() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ): Boolean {
-        openInExternalBrowser(decodeBase64(OMG10))
         val apiBase = resolveApiUrl()
         val id = parseJson<LoadData>(data).id
         val response = app.get(
