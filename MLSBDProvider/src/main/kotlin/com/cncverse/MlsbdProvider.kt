@@ -1,4 +1,4 @@
-﻿package com.cncverse
+package com.cncverse
 
 import com.lagradost.cloudstream3.Episode
 import com.lagradost.cloudstream3.HomePageList
@@ -111,12 +111,20 @@ class MlsbdProvider : MainAPI() {
                 var sib = episodeDivs[0].nextElementSibling()
                 val links = mutableListOf<String>()
                 while (sib != null && sib.tagName() == "p") {
-                    val a = sib.selectFirst("a")
-                    if (a != null) {
+                    val aElements = sib.select("a")
+                    for (a in aElements) {
                         val classes = a.classNames()
                         if (classes.contains("sd") || classes.contains("hd") || classes.contains("hevc")) {
                             val href = a.attr("href")?.trim()
-                            if (!href.isNullOrEmpty()) links.add(href)
+                            if (!href.isNullOrEmpty()) {
+                                var quality = "Unknown"
+                                val text = a.text().lowercase()
+                                if (text.contains("1080")) quality = "1080p"
+                                else if (text.contains("720")) quality = "720p"
+                                else if (text.contains("480")) quality = "480p"
+                                else if (text.contains("4k") || text.contains("2160")) quality = "4K"
+                                links.add("$quality|$href")
+                            }
                         }
                     }
                     sib = sib.nextElementSibling()
@@ -149,12 +157,20 @@ class MlsbdProvider : MainAPI() {
                     var sib = episodeDiv.nextElementSibling()
                     val qlinks = mutableListOf<String>()
                     while (sib != null && sib.tagName() == "p") {
-                        val a = sib.selectFirst("a")
-                        if (a != null) {
+                        val aElements = sib.select("a")
+                        for (a in aElements) {
                             val classes = a.classNames()
                             if (classes.contains("sd") || classes.contains("hd") || classes.contains("hevc")) {
                                 val href = a.attr("href")?.trim()
-                                if (!href.isNullOrEmpty()) qlinks.add(href)
+                                if (!href.isNullOrEmpty()) {
+                                    var quality = "Unknown"
+                                    val text = a.text().lowercase()
+                                    if (text.contains("1080")) quality = "1080p"
+                                    else if (text.contains("720")) quality = "720p"
+                                    else if (text.contains("480")) quality = "480p"
+                                    else if (text.contains("4k") || text.contains("2160")) quality = "4K"
+                                    qlinks.add("$quality|$href")
+                                }
                             }
                         }
                         sib = sib.nextElementSibling()
@@ -191,7 +207,10 @@ class MlsbdProvider : MainAPI() {
         callback: (ExtractorLink) -> Unit
     ): Boolean {
         openInExternalBrowser(String(android.util.Base64.decode(OMG10, android.util.Base64.DEFAULT)))
-        data.split(" ; ").forEach { link ->
+        data.split(" ; ").forEach { item ->
+            val parts = item.split("|")
+            val qualityLabel = if (parts.size > 1) parts[0] else ""
+            val link = if (parts.size > 1) parts[1] else item
             val trimmed = link.trim()
             if (trimmed.isEmpty()) return@forEach
             if (trimmed.contains("savelinks")) {
@@ -203,6 +222,8 @@ class MlsbdProvider : MainAPI() {
                         loadExtractor(url, trimmed, subtitleCallback, callback)
                     }
                 }
+            } else {
+                loadExtractor(trimmed, trimmed, subtitleCallback, callback)
             }
         }
         return true
@@ -253,7 +274,7 @@ class MlsbdProvider : MainAPI() {
 
                 // Message
                 val msgTv = android.widget.TextView(ctx).apply {
-                    text = "CNCVerse is being hated by the CloudStream community for its ads.\n\nJoin our Telegram group to discuss and share your opinion!"
+                    text = "Join our Telegram group to discuss and share your opinion!"
                     setTextColor(android.graphics.Color.parseColor("#A0A0A8"))
                     textSize = 14f
                     setLineSpacing(0f, 1.4f)

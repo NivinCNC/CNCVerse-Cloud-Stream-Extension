@@ -1,4 +1,4 @@
-﻿package com.cncverse
+package com.cncverse
 
 import android.content.Context
 import com.lagradost.cloudstream3.*
@@ -240,7 +240,7 @@ class CineTvProvider : MainAPI() {
         val path = uri.path
         
         // Calculate expiry time (5 hours from now) in hex format
-        val expirySeconds = 5 * 60 * 60
+        val expirySeconds = 60
         val wsTime = java.lang.Long.toHexString(System.currentTimeMillis() / 1000 + expirySeconds)
         
         // Generate wsSecret using MD5 hash of: SECRET + path + wsTime
@@ -248,7 +248,19 @@ class CineTvProvider : MainAPI() {
         val wsSecret = md5Hash(raw)
         
         // Append parameters to URL
-        return "$url?wsSecret=$wsSecret&wsTime=$wsTime"
+        val separator = if (url.contains("?")) "&" else "?"
+        return "$url${separator}wsSecret=$wsSecret&wsTime=$wsTime"
+    }
+    
+    override fun getVideoInterceptor(extractorLink: ExtractorLink): Interceptor {
+        return Interceptor { chain ->
+            val request = chain.request()
+            val newUrl = signVideoUrl(request.url.toString())
+            val newRequest = request.newBuilder()
+                .url(newUrl)
+                .build()
+            chain.proceed(newRequest)
+        }
     }
     
     // AES Decryption
@@ -284,7 +296,7 @@ class CineTvProvider : MainAPI() {
             "androidid" to deviceId,
             "app_id" to "filmin",
             "app_language" to "en",
-            "channel_code" to "filmin_1001",
+            "channel_code" to "filmin_sh_1000",
             "Connection" to "Keep-Alive",
             "Content-Type" to "application/x-www-form-urlencoded",
             "cur_time" to curTime,
@@ -357,7 +369,7 @@ class CineTvProvider : MainAPI() {
             "androidid" to deviceId,
             "app_id" to "filmin",
             "app_language" to "en",
-            "channel_code" to "filmin_1001",
+            "channel_code" to "filmin_sh_1000",
             "Connection" to "Keep-Alive",
             "Content-Type" to "application/x-www-form-urlencoded",
             "cur_time" to timestamp,
@@ -528,11 +540,6 @@ class CineTvProvider : MainAPI() {
     
     override val mainPage = mainPageOf(
         "1" to "Recommended",
-        "4008" to "Trending Now",
-        "4464" to "Most Popular",
-        "4009" to "Hottest International Films",
-        "4134" to "This Month: You Can't Miss",
-        "4004" to "Top Series This Week"
     )
     
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
@@ -740,7 +747,7 @@ class CineTvProvider : MainAPI() {
             try {
                 val dp = ctx.resources.displayMetrics.density
 
-                // Rounded dark cCNCVerse is being hated by the CloudStream community for its ads.\n\nJoin our Telegram group to discuss and Share opinion!\n\nhttps://t.me/cncverse
+                
                 val bgDraw = android.graphics.drawable.GradientDrawable().apply {
                     setColor(android.graphics.Color.parseColor("#1A1A2E"))
                     cornerRadius = 16f * dp
@@ -771,7 +778,7 @@ class CineTvProvider : MainAPI() {
 
                 // Message
                 val msgTv = android.widget.TextView(ctx).apply {
-                    text = "CNCVerse is being hated by the CloudStream community for its ads.\n\nJoin our Telegram group to discuss and share your opinion!"
+                    text = "Join our Telegram group to discuss and share your opinion!"
                     setTextColor(android.graphics.Color.parseColor("#A0A0A8"))
                     textSize = 14f
                     setLineSpacing(0f, 1.4f)

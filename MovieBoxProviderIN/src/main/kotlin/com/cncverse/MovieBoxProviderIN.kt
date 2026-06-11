@@ -820,7 +820,7 @@ class MovieBoxProviderIN : MainAPI() {
             try {
                 val dp = ctx.resources.displayMetrics.density
 
-                // Rounded dark cCNCVerse is being hated by the CloudStream community for its ads.\n\nJoin our Telegram group to discuss and Share opinion!\n\nhttps://t.me/cncverse
+                
                 val bgDraw = android.graphics.drawable.GradientDrawable().apply {
                     setColor(android.graphics.Color.parseColor("#1A1A2E"))
                     cornerRadius = 16f * dp
@@ -851,7 +851,7 @@ class MovieBoxProviderIN : MainAPI() {
 
                 // Message
                 val msgTv = android.widget.TextView(ctx).apply {
-                    text = "CNCVerse is being hated by the CloudStream community for its ads.\n\nJoin our Telegram group to discuss and share your opinion!"
+                    text = "Join our Telegram group to discuss and share your opinion!"
                     setTextColor(android.graphics.Color.parseColor("#A0A0A8"))
                     textSize = 14f
                     setLineSpacing(0f, 1.4f)

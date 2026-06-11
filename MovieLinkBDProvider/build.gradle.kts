@@ -1,5 +1,5 @@
 // use an integer for version numbers
-version = 35
+version = 1
 
 android {
     buildFeatures {
@@ -7,13 +7,9 @@ android {
     }
 }
 
-android {
-    namespace = "com.cncverse"
-}
-
 cloudstream {
-    description = "Movie and TV Series provider"
-    authors = listOf("Redowan, NivinCNC")
+    description = "MovieLinkBD - Largest Movie Download Site in Bangladesh"
+    authors = listOf("NivinCNC")
 
     /**
     * Status int as the following:
@@ -22,16 +18,16 @@ cloudstream {
     * 2: Slow
     * 3: Beta only
     * */
-    status = 1 // will be 3 if unspecified
+    status = 1
 
+    // List of video source types.
     tvTypes = listOf(
         "Movie",
         "TvSeries",
-        "Anime",
         "AnimeMovie",
         "AsianDrama"
     )
-    language = "ta"
+    language = "bn"
 
-    iconUrl = "https://github.com/NivinCNC/CNCVerse-Cloud-Stream-Extension/raw/refs/heads/master/Rtally/icon.png"
+    iconUrl = "https://movielinkbd.one/img/favicon-192x192.png"
 }
