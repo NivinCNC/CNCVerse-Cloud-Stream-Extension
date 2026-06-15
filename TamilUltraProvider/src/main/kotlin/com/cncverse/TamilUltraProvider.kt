@@ -20,7 +20,7 @@ import com.lagradost.cloudstream3.ui.settings.Globals.TV
 import com.lagradost.cloudstream3.ui.settings.Globals.isLayout
 
 class TamilUltraProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://tamilultra.top"
+    override var mainUrl = "https://tamilultra.co.uk"
     override var name = "TamilUltra"
     override val hasMainPage = true
     override var lang = "ta"
@@ -137,7 +137,7 @@ class TamilUltraProvider : MainAPI() { // all providers must be an instance of M
                     url
                 ).parsed<EmbedUrl>().embedUrl
             ).toString()
-        val link = "https://tamilultra.top/" + m3u8.substringAfter(".php?")
+        val link = "https://tamilultra.co.uk/" + m3u8.substringAfter(".php?")
         return newMovieLoadResponse("$title (Use Vpn if content didn't play)", id, TvType.Live, "$m3u8,$link") {
                 this.posterUrl = poster
             }
@@ -162,7 +162,7 @@ class TamilUltraProvider : MainAPI() { // all providers must be an instance of M
             )
             {
                 this.quality = Qualities.Unknown.value
-                this.referer = "https://tamilultra.top/"
+                this.referer = "https://tamilultra.co.uk/"
             }
         )
 
