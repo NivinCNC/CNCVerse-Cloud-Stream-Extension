@@ -16,11 +16,14 @@ jobs:
 
       - name: Sync with upstream
         run: |
-          git config --global user.email "action@github.com"
-          git config --global user.name "GitHub Action"
-          git remote add upstream https://github.com/NivinCNC/CNCVerse-Cloud-Stream-Extension.git
+          git remote add upstream https://github.com/NivinCNC/CNCVerse-Cloud-Stream-Extension
           git fetch upstream
-          git merge upstream/master --allow-unrelated-histories -m "Sync upstream"
-          git checkout HEAD -- .github/workflows/build.yml
-          git checkout HEAD -- .github/workflows/sync-upstream.yml
-          git push origin master
+          git merge upstream/master --allow-unrelated-histories -X ours --no-edit || true
+          
+          # If merge left conflicts, resolve by keeping our versions
+          git checkout --ours .github/workflows/build.yml 2>/dev/null || true
+          git checkout --ours .github/workflows/sync-upstream.yml 2>/dev/null || true
+          git add .github/workflows/build.yml .github/workflows/sync-upstream.yml 2>/dev/null || true
+          
+          # Complete merge if it was paused
+          git diff --cached --quiet || git commit -m "Merge upstream (keep our workflows)" || true
