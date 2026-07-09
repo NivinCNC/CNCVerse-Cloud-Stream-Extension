@@ -608,26 +608,6 @@
         "name": "StreamFlixProvider"
     },
     {
-        "iconUrl": "https://github.com/shanto100files/CNCVerse-Cloud-Stream-Extension/raw/refs/heads/master/CNC%20Verse/icon.png",
-        "fileHash": "sha256-ba4df02ab6accf58aba3e2d9b40ac3285ddd70545c6f9e4df3d25595e4f1df36",
-        "apiVersion": 1,
-        "repositoryUrl": "https://github.com/shanto100files/CNCVerse-Cloud-Stream-Extension",
-        "fileSize": 17431,
-        "status": 1,
-        "authors": [
-            "NivinCNC"
-        ],
-        "tvTypes": [
-            "Movie",
-            "TvSeries"
-        ],
-        "version": 9,
-        "internalName": "SubscriptionManager",
-        "description": "Manage your CNCVerse subscription \u2014 remove ads with a premium plan",
-        "url": "https://raw.githubusercontent.com/shanto100files/CNCVerse-Cloud-Stream-Extension/builds/SubscriptionManager.cs3",
-        "name": "SubscriptionManager"
-    },
-    {
         "iconUrl": "https://github.com/shanto100files/CNCVerse-Cloud-Stream-Extension/raw/refs/heads/master/TamilDhoolProvider/icon.png",
         "fileHash": "sha256-84d1573108f8fa7a6149683fd5347617c80528dc6cb5dc68ce400b0abacf54de",
         "apiVersion": 1,
