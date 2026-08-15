@@ -1,6 +1,6 @@
-name: ⭐ Source Request
-description: Request a new Source
-title: "[Site or App Suggestion] "
+name: ⭐ Md Abi TV
+description: Live TV Channel And movie server
+title: "[Md Abi TV] "
 labels: [Site or App Request]
 assignees: NivinCNC
 body:
@@ -8,16 +8,16 @@ body:
   - type: input
     id: name
     attributes:
-      label: Source name
+      label: Md Abi TV
       placeholder: |
         Example: "Not Real Source"
     validations:
       required: true
 
   - type: input
-    id: link
+    id: https://raw.githubusercontent.com/mdabi0011-lab/Md-Abi-TV/refs/heads/main/Md%20Abi%20TV.m3u
     attributes:
-      label: Source link
+      label:https://raw.githubusercontent.com/mdabi0011-lab/Md-Abi-TV/refs/heads/main/Md%20Abi%20TV.m3u
       placeholder: |
         Example: "https://notrealsource.org"
     validations:
