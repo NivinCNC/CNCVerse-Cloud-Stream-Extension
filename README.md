@@ -49,13 +49,13 @@ Cloud Stream ( To install : [View Docs](https://recloudstream.github.io/csdocs/)
 | LivXowProvider | NivinCNC | Live | 14 | ✅ Working |
 | M3UPlaylistPlayerProvider | NivinCNC | Live | 15 | ✅ Working |
 | MLSBDProvider | NivinCNC | Movie, TvSeries, AnimeMovie, AsianDrama | 30 | ✅ Working |
-| MovieBoxProvider | NivinCNC | Movie, TvSeries | 45 | ✅ Working |
-| MovieBoxProviderIN | NivinCNC | Movie, TvSeries | 47 | ✅ Working |
+| MovieBoxProvider | NivinCNC | Movie, TvSeries | 46 | ✅ Working |
+| MovieBoxProviderIN | NivinCNC | Movie, TvSeries | 48 | ✅ Working |
 | MovieLinkBDProvider | NivinCNC | Movie, TvSeries, AnimeMovie, AsianDrama | 16 | ✅ Working |
 | MoviezwapProvider | NivinCNC | Movie | 30 | ✅ Working |
 | PikashowProvider | NivinCNC | Movie, TvSeries | 30 | ✅ Working |
 | PlayFyProvider | NivinCNC | Live | 8 | ✅ Working |
-| PlayZTVProvider | NivinCNC | Live | 33 | ✅ Working |
+| PlayZTVProvider | NivinCNC | Live | 34 | ✅ Working |
 | RadioIndiaProvider | NivinCNC | Live | 31 | ✅ Working |
 | Rtally | Redowan, NivinCNC | Movie, TvSeries, Anime, AnimeMovie, AsianDrama | 47 | ✅ Working |
 | SKTechProvider | NivinCNC | Live | 52 | ✅ Working |
