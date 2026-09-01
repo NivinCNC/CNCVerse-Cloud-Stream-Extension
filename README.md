@@ -55,7 +55,7 @@ Cloud Stream ( To install : [View Docs](https://recloudstream.github.io/csdocs/)
 | MoviezwapProvider | NivinCNC | Movie | 30 | ✅ Working |
 | PikashowProvider | NivinCNC | Movie, TvSeries | 30 | ✅ Working |
 | PlayFyProvider | NivinCNC | Live | 8 | ✅ Working |
-| PlayZTVProvider | NivinCNC | Live | 34 | ✅ Working |
+| PlayZTVProvider | NivinCNC | Live | 35 | ✅ Working |
 | RadioIndiaProvider | NivinCNC | Live | 31 | ✅ Working |
 | Rtally | Redowan, NivinCNC | Movie, TvSeries, Anime, AnimeMovie, AsianDrama | 47 | ✅ Working |
 | SKTechProvider | NivinCNC | Live | 52 | ✅ Working |
