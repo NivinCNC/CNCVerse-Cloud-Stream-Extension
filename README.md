@@ -34,7 +34,7 @@ Cloud Stream ( To install : [View Docs](https://recloudstream.github.io/csdocs/)
 |------|-----------|----------|---------|--------|
 | AniKoto | NivinCNC | Anime, AnimeMovie, OVA | 10 | ✅ Working |
 | AnimeSuge | NivinCNC | Anime, AnimeMovie, OVA | 10 | ✅ Working |
-| BilibiliProvider | NivinCNC | Anime, Movies, TvSeries, Documentary | 35 | ⚠️ Geo-Restricted |
+| BilibiliProvider | NivinCNC | Anime, Movies, TvSeries, Documentary | 36 | ⚠️ Geo-Restricted |
 | CastleTvProvider | NivinCNC | Movie, TvSeries | 40 | ✅ Working |
 | CineTvProvider | NivinCNC | Movie, TvSeries | 35 | ✅ Working |
 | CNC Verse | NivinCNC | Movie, TvSeries | 111 | ✅ Working |
