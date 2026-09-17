@@ -37,8 +37,6 @@ Cloud Stream ( To install : [View Docs](https://recloudstream.github.io/csdocs/)
 | BilibiliProvider | NivinCNC | Anime, Movies, TvSeries, Documentary | 36 | ⚠️ Geo-Restricted |
 | CastleTvProvider | NivinCNC | Movie, TvSeries | 40 | ✅ Working |
 | CineTvProvider | NivinCNC | Movie, TvSeries | 35 | ✅ Working |
-| CNC Verse | NivinCNC | Movie, TvSeries | 111 | ✅ Working |
-| CNC Verse Mobile | NivinCNC | Movie, TvSeries | 10 | ✅ Working |
 | CricifyProvider | NivinCNC | Live | 67 | ✅ Working |
 | DesiSerialsProvider | NivinCNC | TvSeries | 32 | ✅ Working |
 | DoFlixProvider | NivinCNC | TvSeries, Movie | 35 | ❌ Broken |
@@ -54,6 +52,7 @@ Cloud Stream ( To install : [View Docs](https://recloudstream.github.io/csdocs/)
 | MovieBoxProviderIN | NivinCNC | Movie, TvSeries | 51 | ✅ Working |
 | MovieLinkBDProvider | NivinCNC | Movie, TvSeries, AnimeMovie, AsianDrama | 19 | ✅ Working |
 | MoviezwapProvider | NivinCNC | Movie | 32 | ✅ Working |
+| NetMirror | NivinCNC | Movie, TvSeries | 1 | ✅ Working |
 | PikashowProvider | NivinCNC | Movie, TvSeries | 32 | ✅ Working |
 | PlayFyProvider | NivinCNC | Live | 10 | ✅ Working |
 | PlayZTVProvider | NivinCNC | Live | 37 | ✅ Working |
@@ -68,7 +67,7 @@ Cloud Stream ( To install : [View Docs](https://recloudstream.github.io/csdocs/)
 | Watch32 | NivinCNC | Movie, TvSeries | 34 | ✅ Working |
 | XonProvider | NivinCNC | TvSeries, Movie, Anime | 35 | ✅ Working |
 
-*Table auto-generated on every build — 35 plugins total.*
+*Table auto-generated on every build — 34 plugins total.*
 
 <!-- PLUGINS_TABLE_END -->
 
