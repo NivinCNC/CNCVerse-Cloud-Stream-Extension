@@ -40,7 +40,7 @@ Cloud Stream ( To install : [View Docs](https://recloudstream.github.io/csdocs/)
 | CNC Verse | NivinCNC | Movie, TvSeries | 111 | ✅ Working |
 | CNC Verse Mobile | NivinCNC | Movie, TvSeries | 10 | ✅ Working |
 | CricifyProvider | NivinCNC | Live | 67 | ✅ Working |
-| DesiSerialsProvider | NivinCNC | TvSeries | 32 | ✅ Working |
+| DesiSerialsProvider | NivinCNC | TvSeries | 33 | ✅ Working |
 | DoFlixProvider | NivinCNC | TvSeries, Movie | 35 | ❌ Broken |
 | EinthusanProvider | NivinCNC | Movie | 37 | ✅ Working |
 | GoldenAudiobook | NivinCNC | Others | 33 | ✅ Working |
@@ -62,7 +62,7 @@ Cloud Stream ( To install : [View Docs](https://recloudstream.github.io/csdocs/)
 | SKTechProvider | NivinCNC | Live | 54 | ✅ Working |
 | SportzxProvider | NivinCNC | Live | 21 | ✅ Working |
 | StreamFlixProvider | NivinCNC | Movie, TvSeries, Anime | 34 | ✅ Working |
-| TamilDhoolProvider | NivinCNC | TvSeries | 38 | ✅ Working |
+| TamilDhoolProvider | NivinCNC | TvSeries | 39 | ✅ Working |
 | Tamilian | NivinCNC | Movies | 32 | ✅ Working |
 | TamilUltraProvider | NivinCNC | Live | 40 | ✅ Working |
 | Watch32 | NivinCNC | Movie, TvSeries | 34 | ✅ Working |
