@@ -49,9 +49,9 @@ Cloud Stream ( To install : [View Docs](https://recloudstream.github.io/csdocs/)
 | LibriVoxAudiobook | NivinCNC | Others | 33 | ✅ Working |
 | LivXowProvider | NivinCNC | Live | 16 | ✅ Working |
 | M3UPlaylistPlayerProvider | NivinCNC | Live | 17 | ✅ Working |
-| MLSBDProvider | NivinCNC | Movie, TvSeries, AnimeMovie, AsianDrama | 32 | ✅ Working |
-| MovieBoxProvider | NivinCNC | Movie, TvSeries | 49 | ✅ Working |
-| MovieBoxProviderIN | NivinCNC | Movie, TvSeries | 51 | ✅ Working |
+| MLSBDProvider | NivinCNC | Movie, TvSeries, AnimeMovie, AsianDrama | 33 | ✅ Working |
+| MovieBoxProvider | NivinCNC | Movie, TvSeries | 50 | ✅ Working |
+| MovieBoxProviderIN | NivinCNC | Movie, TvSeries | 52 | ✅ Working |
 | MovieLinkBDProvider | NivinCNC | Movie, TvSeries, AnimeMovie, AsianDrama | 19 | ✅ Working |
 | MoviezwapProvider | NivinCNC | Movie | 32 | ✅ Working |
 | PikashowProvider | NivinCNC | Movie, TvSeries | 32 | ✅ Working |
