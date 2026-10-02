@@ -59,7 +59,7 @@ Cloud Stream ( To install : [View Docs](https://recloudstream.github.io/csdocs/)
 | PlayZTVProvider | NivinCNC | Live | 39 | ✅ Working |
 | RadioIndiaProvider | NivinCNC | Live | 33 | ✅ Working |
 | Rtally | Redowan, NivinCNC | Movie, TvSeries, Anime, AnimeMovie, AsianDrama | 49 | ✅ Working |
-| SKTechProvider | NivinCNC | Live | 55 | ✅ Working |
+| SKTechProvider | NivinCNC | Live | 56 | ✅ Working |
 | SportzxProvider | NivinCNC | Live | 22 | ✅ Working |
 | StreamFlixProvider | NivinCNC | Movie, TvSeries, Anime | 34 | ✅ Working |
 | TamilDhoolProvider | NivinCNC | TvSeries | 39 | ✅ Working |
