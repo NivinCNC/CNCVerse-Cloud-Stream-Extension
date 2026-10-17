@@ -37,6 +37,7 @@ Cloud Stream ( To install : [View Docs](https://recloudstream.github.io/csdocs/)
 | BilibiliProvider | NivinCNC | Anime, Movies, TvSeries, Documentary | 36 | ⚠️ Geo-Restricted |
 | CastleTvProvider | NivinCNC | Movie, TvSeries | 40 | ✅ Working |
 | CineTvProvider | NivinCNC | Movie, TvSeries | 35 | ✅ Working |
+| CineVoodProvider | NivinCNC | Movie, TvSeries | 1 | ✅ Working |
 | CNC Verse | NivinCNC | Movie, TvSeries | 114 | ✅ Working |
 | CNC Verse Mobile | NivinCNC | Movie, TvSeries | 11 | ✅ Working |
 | CricifyProvider | NivinCNC | Live | 71 | ✅ Working |
@@ -68,7 +69,7 @@ Cloud Stream ( To install : [View Docs](https://recloudstream.github.io/csdocs/)
 | Watch32 | NivinCNC | Movie, TvSeries | 35 | ✅ Working |
 | XonProvider | NivinCNC | TvSeries, Movie, Anime | 35 | ✅ Working |
 
-*Table auto-generated on every build — 35 plugins total.*
+*Table auto-generated on every build — 36 plugins total.*
 
 <!-- PLUGINS_TABLE_END -->
 
