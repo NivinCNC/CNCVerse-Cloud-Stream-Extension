@@ -38,9 +38,9 @@ Cloud Stream ( To install : [View Docs](https://recloudstream.github.io/csdocs/)
 | BilibiliProvider | NivinCNC | Anime, Movies, TvSeries, Documentary | 37 | ⚠️ Geo-Restricted |
 | CastleTvProvider | NivinCNC | Movie, TvSeries | 41 | ✅ Working |
 | CineTvProvider | NivinCNC | Movie, TvSeries | 36 | ✅ Working |
-| CineVoodProvider | NivinCNC | Movie, TvSeries | 3 | ✅ Working |
+| CineVoodProvider | NivinCNC | Movie, TvSeries | 4 | ✅ Working |
 | CNC Verse | NivinCNC | Movie, TvSeries | 115 | ✅ Working |
-| CNC Verse Mobile | NivinCNC | Movie, TvSeries | 12 | ✅ Working |
+| CNC Verse Mobile | NivinCNC | Movie, TvSeries | 13 | ✅ Working |
 | CricifyProvider | NivinCNC | Live | 76 | ✅ Working |
 | DesiSerialsProvider | NivinCNC | TvSeries | 34 | ✅ Working |
 | DoFlixProvider | NivinCNC | TvSeries, Movie | 38 | ✅ Working |
