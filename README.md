@@ -46,6 +46,7 @@ Cloud Stream ( To install : [View Docs](https://recloudstream.github.io/csdocs/)
 | DaddyLiveProvider | NivinCNC | Live | 2 | ✅ Working |
 | DesiSerialsProvider | NivinCNC | TvSeries | 34 | ✅ Working |
 | DoFlixProvider | NivinCNC | TvSeries, Movie | 38 | ✅ Working |
+| EasyPlayProvider | NivinCNC | Live | 1 | ✅ Working |
 | EinthusanProvider | NivinCNC | Movie | 38 | ✅ Working |
 | GoldenAudiobook | NivinCNC | Others | 35 | ✅ Working |
 | HDOProvider | NivinCNC | Movies, TvSeries | 36 | ❌ Broken |
@@ -75,7 +76,7 @@ Cloud Stream ( To install : [View Docs](https://recloudstream.github.io/csdocs/)
 | Watch32 | NivinCNC | Movie, TvSeries | 36 | ✅ Working |
 | XonProvider | NivinCNC | TvSeries, Movie, Anime | 36 | ✅ Working |
 
-*Table auto-generated on every build — 41 plugins total.*
+*Table auto-generated on every build — 42 plugins total.*
 
 <!-- PLUGINS_TABLE_END -->
 
