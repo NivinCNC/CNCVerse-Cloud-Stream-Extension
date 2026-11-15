@@ -33,48 +33,48 @@ Cloud Stream ( To install : [View Docs](https://recloudstream.github.io/csdocs/)
 
 | Name | Author(s) | TV Types | Version | Status |
 |------|-----------|----------|---------|--------|
-| AniKoto | NivinCNC | Anime, AnimeMovie, OVA | 11 | ✅ Working |
-| AnimeSuge | NivinCNC | Anime, AnimeMovie, OVA | 11 | ✅ Working |
-| BilibiliProvider | NivinCNC | Anime, Movies, TvSeries, Documentary | 37 | ⚠️ Geo-Restricted |
-| CastleTvProvider | NivinCNC | Movie, TvSeries | 47 | ✅ Working |
-| CineDozeProvider | NivinCNC | Movie, TvSeries | 1 | ✅ Working |
-| CineTvProvider | NivinCNC | Movie, TvSeries | 36 | ✅ Working |
-| CineVoodProvider | NivinCNC | Movie, TvSeries | 8 | ✅ Working |
-| CNC Verse | NivinCNC | Movie, TvSeries | 115 | ✅ Working |
-| CNC Verse Mobile | NivinCNC | Movie, TvSeries | 13 | ✅ Working |
-| CricifyProvider | NivinCNC | Live | 76 | ✅ Working |
-| DaddyLiveProvider | NivinCNC | Live | 2 | ✅ Working |
-| DesiSerialsProvider | NivinCNC | TvSeries | 34 | ✅ Working |
-| DoFlixProvider | NivinCNC | TvSeries, Movie | 38 | ✅ Working |
-| EasyPlayProvider | NivinCNC | Live | 5 | ✅ Working |
-| EinthusanProvider | NivinCNC | Movie | 38 | ✅ Working |
-| GoldenAudiobook | NivinCNC | Others | 35 | ✅ Working |
-| HDOProvider | NivinCNC | Movies, TvSeries | 36 | ❌ Broken |
-| HDrezkaProvider | Hexated, NivinCNC | AsianDrama, Anime, TvSeries, Movie | 38 | ✅ Working |
-| LibriVoxAudiobook | NivinCNC | Others | 35 | ✅ Working |
-| LivXowProvider | NivinCNC | Live | 25 | ✅ Working |
-| M3UPlaylistPlayerProvider | NivinCNC | Live | 20 | ✅ Working |
-| MLSBDProvider | NivinCNC | Movie, TvSeries, AnimeMovie, AsianDrama | 36 | ✅ Working |
-| MovieBoxProvider | NivinCNC | Movie, TvSeries | 53 | ✅ Working |
-| MovieBoxProviderIN | NivinCNC | Movie, TvSeries | 55 | ✅ Working |
-| MovieLinkBDProvider | NivinCNC | Movie, TvSeries, AnimeMovie, AsianDrama | 26 | ✅ Working |
-| MoviezwapProvider | NivinCNC | Movie | 33 | ✅ Working |
-| NTVProvider | NivinCNC | Live | 5 | ✅ Working |
-| PikashowProvider | NivinCNC | Movie, TvSeries | 33 | ✅ Working |
-| PlayFyProvider | NivinCNC | Live | 19 | ✅ Working |
-| PlayZTVProvider | NivinCNC | Live | 47 | ✅ Working |
-| PPVProvider | NivinCNC | Live | 3 | ✅ Working |
-| RadioIndiaProvider | NivinCNC | Live | 34 | ✅ Working |
-| Rtally | Redowan, NivinCNC | Movie, TvSeries, Anime, AnimeMovie, AsianDrama | 53 | ✅ Working |
-| SKTechProvider | NivinCNC | Live | 63 | ✅ Working |
-| SportzxProvider | NivinCNC | Live | 31 | ✅ Working |
-| StreamFlixProvider | NivinCNC | Movie, TvSeries, Anime | 35 | ✅ Working |
-| TamilDhoolProvider | NivinCNC | TvSeries | 41 | ✅ Working |
-| Tamilian | NivinCNC | Movies | 33 | ✅ Working |
-| TamilUltraProvider | NivinCNC | Live | 41 | ✅ Working |
-| VegaMoviesProvider | megix, NivinCNC | TvSeries, Movie, AsianDrama, Anime | 1 | ✅ Working |
-| Watch32 | NivinCNC | Movie, TvSeries | 36 | ✅ Working |
-| XonProvider | NivinCNC | TvSeries, Movie, Anime | 36 | ✅ Working |
+| AniKoto | NivinCNC | Anime, AnimeMovie, OVA | 12 | ✅ Working |
+| AnimeSuge | NivinCNC | Anime, AnimeMovie, OVA | 12 | ✅ Working |
+| BilibiliProvider | NivinCNC | Anime, Movies, TvSeries, Documentary | 38 | ⚠️ Geo-Restricted |
+| CastleTvProvider | NivinCNC | Movie, TvSeries | 48 | ✅ Working |
+| CineDozeProvider | NivinCNC | Movie, TvSeries | 2 | ✅ Working |
+| CineTvProvider | NivinCNC | Movie, TvSeries | 37 | ✅ Working |
+| CineVoodProvider | NivinCNC | Movie, TvSeries | 9 | ✅ Working |
+| CNC Verse | NivinCNC | Movie, TvSeries | 116 | ✅ Working |
+| CNC Verse Mobile | NivinCNC | Movie, TvSeries | 14 | ✅ Working |
+| CricifyProvider | NivinCNC | Live | 77 | ✅ Working |
+| DaddyLiveProvider | NivinCNC | Live | 3 | ✅ Working |
+| DesiSerialsProvider | NivinCNC | TvSeries | 35 | ✅ Working |
+| DoFlixProvider | NivinCNC | TvSeries, Movie | 39 | ✅ Working |
+| EasyPlayProvider | NivinCNC | Live | 6 | ✅ Working |
+| EinthusanProvider | NivinCNC | Movie | 39 | ✅ Working |
+| GoldenAudiobook | NivinCNC | Others | 36 | ✅ Working |
+| HDOProvider | NivinCNC | Movies, TvSeries | 37 | ❌ Broken |
+| HDrezkaProvider | Hexated, NivinCNC | AsianDrama, Anime, TvSeries, Movie | 39 | ✅ Working |
+| LibriVoxAudiobook | NivinCNC | Others | 36 | ✅ Working |
+| LivXowProvider | NivinCNC | Live | 26 | ✅ Working |
+| M3UPlaylistPlayerProvider | NivinCNC | Live | 21 | ✅ Working |
+| MLSBDProvider | NivinCNC | Movie, TvSeries, AnimeMovie, AsianDrama | 37 | ✅ Working |
+| MovieBoxProvider | NivinCNC | Movie, TvSeries | 54 | ✅ Working |
+| MovieBoxProviderIN | NivinCNC | Movie, TvSeries | 56 | ✅ Working |
+| MovieLinkBDProvider | NivinCNC | Movie, TvSeries, AnimeMovie, AsianDrama | 27 | ✅ Working |
+| MoviezwapProvider | NivinCNC | Movie | 34 | ✅ Working |
+| NTVProvider | NivinCNC | Live | 6 | ✅ Working |
+| PikashowProvider | NivinCNC | Movie, TvSeries | 34 | ✅ Working |
+| PlayFyProvider | NivinCNC | Live | 20 | ✅ Working |
+| PlayZTVProvider | NivinCNC | Live | 48 | ✅ Working |
+| PPVProvider | NivinCNC | Live | 4 | ✅ Working |
+| RadioIndiaProvider | NivinCNC | Live | 35 | ✅ Working |
+| Rtally | Redowan, NivinCNC | Movie, TvSeries, Anime, AnimeMovie, AsianDrama | 54 | ✅ Working |
+| SKTechProvider | NivinCNC | Live | 64 | ✅ Working |
+| SportzxProvider | NivinCNC | Live | 32 | ✅ Working |
+| StreamFlixProvider | NivinCNC | Movie, TvSeries, Anime | 36 | ✅ Working |
+| TamilDhoolProvider | NivinCNC | TvSeries | 42 | ✅ Working |
+| Tamilian | NivinCNC | Movies | 34 | ✅ Working |
+| TamilUltraProvider | NivinCNC | Live | 42 | ✅ Working |
+| VegaMoviesProvider | megix, NivinCNC | TvSeries, Movie, AsianDrama, Anime | 2 | ✅ Working |
+| Watch32 | NivinCNC | Movie, TvSeries | 37 | ✅ Working |
+| XonProvider | NivinCNC | TvSeries, Movie, Anime | 37 | ✅ Working |
 
 *Table auto-generated on every build — 42 plugins total.*
 
