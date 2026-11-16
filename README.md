@@ -58,7 +58,7 @@ Cloud Stream ( To install : [View Docs](https://recloudstream.github.io/csdocs/)
 | MovieBoxProvider | NivinCNC | Movie, TvSeries | 55 | ✅ Working |
 | MovieBoxProviderIN | NivinCNC | Movie, TvSeries | 57 | ✅ Working |
 | MovieLinkBDProvider | NivinCNC | Movie, TvSeries, AnimeMovie, AsianDrama | 28 | ✅ Working |
-| MoviePlusProvider | NivinCNC | Movie, TvSeries | 1 | ✅ Working |
+| MoviePlusProvider | NivinCNC | Movie, TvSeries | 2 | ✅ Working |
 | MoviezwapProvider | NivinCNC | Movie | 34 | ✅ Working |
 | NTVProvider | NivinCNC | Live | 6 | ✅ Working |
 | PikashowProvider | NivinCNC | Movie, TvSeries | 34 | ✅ Working |
