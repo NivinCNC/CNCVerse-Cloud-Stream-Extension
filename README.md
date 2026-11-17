@@ -43,7 +43,7 @@ Cloud Stream ( To install : [View Docs](https://recloudstream.github.io/csdocs/)
 | CNC Verse | NivinCNC | Movie, TvSeries | 116 | ✅ Working |
 | CNC Verse Mobile | NivinCNC | Movie, TvSeries | 14 | ✅ Working |
 | CricifyProvider | NivinCNC | Live | 77 | ✅ Working |
-| DaddyLiveProvider | NivinCNC | Live | 3 | ✅ Working |
+| DaddyLiveProvider | NivinCNC | Live | 8 | ✅ Working |
 | DesiSerialsProvider | NivinCNC | TvSeries | 35 | ✅ Working |
 | DoFlixProvider | NivinCNC | TvSeries, Movie | 39 | ✅ Working |
 | EasyPlayProvider | NivinCNC | Live | 10 | ✅ Working |
