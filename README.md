@@ -46,7 +46,7 @@ Cloud Stream ( To install : [View Docs](https://recloudstream.github.io/csdocs/)
 | DaddyLiveProvider | NivinCNC | Live | 8 | ✅ Working |
 | DesiSerialsProvider | NivinCNC | TvSeries | 35 | ✅ Working |
 | DoFlixProvider | NivinCNC | TvSeries, Movie | 39 | ✅ Working |
-| EasyPlayProvider | NivinCNC | Live | 10 | ✅ Working |
+| EasyPlayProvider | NivinCNC | Live | 11 | ✅ Working |
 | EinthusanProvider | NivinCNC | Movie | 39 | ✅ Working |
 | GoldenAudiobook | NivinCNC | Others | 36 | ✅ Working |
 | HDOProvider | NivinCNC | Movies, TvSeries | 37 | ❌ Broken |
