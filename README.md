@@ -52,7 +52,7 @@ Cloud Stream ( To install : [View Docs](https://recloudstream.github.io/csdocs/)
 | GoldenAudiobook | NivinCNC | Others | 36 | ✅ Working |
 | HDOProvider | NivinCNC | Movies, TvSeries | 37 | ❌ Broken |
 | HDrezkaProvider | Hexated, NivinCNC | AsianDrama, Anime, TvSeries, Movie | 39 | ✅ Working |
-| JioTVPlusProvider | NivinCNC | Live | 1 | ✅ Working |
+| JioTVPlusProvider | NivinCNC | Live | 2 | ✅ Working |
 | LibriVoxAudiobook | NivinCNC | Others | 36 | ✅ Working |
 | LivXowProvider | NivinCNC | Live | 27 | ✅ Working |
 | M3UPlaylistPlayerProvider | NivinCNC | Live | 22 | ✅ Working |
