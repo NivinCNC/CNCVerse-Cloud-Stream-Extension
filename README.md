@@ -70,6 +70,7 @@ Cloud Stream ( To install : [View Docs](https://recloudstream.github.io/csdocs/)
 | RadioIndiaProvider | NivinCNC | Live | 35 | ✅ Working |
 | Rtally | Redowan, NivinCNC | Movie, TvSeries, Anime, AnimeMovie, AsianDrama | 54 | ✅ Working |
 | SKTechProvider | NivinCNC | Live | 65 | ✅ Working |
+| SonyLIVProvider | NivinCNC | Movie, TvSeries | 1 | ⚠️ Geo-Restricted |
 | SportzxProvider | NivinCNC | Live | 33 | ✅ Working |
 | StreamFlixProvider | NivinCNC | Movie, TvSeries, Anime | 36 | ✅ Working |
 | TamilDhoolProvider | NivinCNC | TvSeries | 42 | ✅ Working |
@@ -79,7 +80,7 @@ Cloud Stream ( To install : [View Docs](https://recloudstream.github.io/csdocs/)
 | Watch32 | NivinCNC | Movie, TvSeries | 37 | ✅ Working |
 | XonProvider | NivinCNC | TvSeries, Movie, Anime | 37 | ✅ Working |
 
-*Table auto-generated on every build — 45 plugins total.*
+*Table auto-generated on every build — 46 plugins total.*
 
 <!-- PLUGINS_TABLE_END -->
 
